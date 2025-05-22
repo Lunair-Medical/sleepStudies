@@ -15,7 +15,7 @@ library(ggpubr)
 library(svDialogs)
 
 ## set paths
-output_path<-here("figures")
+#output_path<-here("figures")
 default_dir<-here("data/original")
 
 ## graphic settings
@@ -45,7 +45,7 @@ theme_lunair <- function(textsize=24){
 ## value settings
 stim_threshold<-200 #threshold value for the 'on'/off designation for stim
 
-## read in data
+## read in data in the form of a (scored) event grid out of Nox
 fp<-dlgOpen(
   title = "Select the scored event grid file",
   default=default_dir,
@@ -53,31 +53,41 @@ fp<-dlgOpen(
   multi = FALSE,
   filters = dlgFilters[c("CSV files", "All files")])$res
 
+#set the default directory to the directory of the file selected:
+patient_dir= str_extract(fp, ".*[\\\\/]")
+
+#dialog box to select where the summaryfigures will be saved: 
+output_path<-dlgDir(
+  title = "Select the output directory for figures",
+  default=patient_dir)$res
+
+### DATA ANALYSIS 
+
+#read in data
 data<-read.csv(fp)
 
-## DATA PREPARATION 
-#rename and reformat columns
-data %>% 
+#clean and rename data
+data %>%
+  slice(-1) %>% # remove first row
   rename(
     start_time = "Start.Time",
     end_time = "End.Time",
     phasic_amplitude = "Phasic.Amplitude..max.", 
-    stim="Stimulation..max.",
-    #position_average = "Position..ave."
-  ) %>%
-  slice(-1) %>% # remove first row
+    stim="Stimulation..max.") %>%
   mutate(amp_factor=as.factor(as.character(phasic_amplitude))) %>%
   mutate(Event=as.factor(as.character(Event))) %>%
   mutate(time=as.POSIXct(str_extract(start_time,pattern="^[^\\.]+"),format="%H:%M:%S")) %>% #this will add a date; disregard the date here
-  mutate(Duration=as.numeric(Duration)) -> data
+  mutate(Duration=as.numeric(Duration)) %>%
+  mutate(Start.Epoch=as.numeric(Start.Epoch)) %>% 
+  mutate(End.Epoch=as.numeric(End.Epoch))-> data
 
 #convert stim strength to numeric values: 
 data$stim_numeric<-as.numeric(data$stim)
 hist(data$stim_numeric)
-sort(data$stim_numeric)
+max(data$stim_numeric)
 
 #look at the stim trace thru time:
-ggplot(data) + aes(x=time, y=stim_numeric) + geom_line()
+data  %>%  ggplot() + aes(x=time, y=stim_numeric) + geom_line()
 
 #fix stim trace to on/off based on threshold value:
 data %>% 
@@ -144,28 +154,40 @@ summary_table %>% ggplot(aes(x=sort(cat_stim), y=AHI_score,fill=cat_stim)) +
   theme_lunair()+
   theme(legend.position = "none") -> summary_graph
 summary_graph
-ggsave(summary_graph, filename=here("figures/summary_graph.png"), width=8, height=9)
+
+
+ggsave(summary_graph, filename=paste0(output_path,"/AHI_summary_graph.png"), width=8, height=9)
+
 
 
 ### ODI ###
 
+#Because of circulatory delay, we need to offset the ODI calculations by 1 epoch (30s) to approximate this:
+
+#Identify whether stim was on or off on the epoch immediately prior to the desat
+sleep_epochs$prior_to_desat<-NA #empty column
+for (i in 2 : length( sleep_epochs$prior_to_desat)){
+  sleep_epochs$prior_to_desat[i]<-sleep_epochs$cat_stim[i-1]
+}
+
 #calculate how many desats with stim on/off 
-desat_summary <- data %>% group_by(cat_stim) %>%
+desat_summary <- data %>% group_by(prior_to_desat) %>%
   summarize(n_desats=sum(ODI_events), mean_dur_desats=mean(Duration)) 
 
 desat_summary %>% 
-  mutate(ODI=case_when(cat_stim=="On" ~ round(n_desats/TST_on$TST_hr,1),
-                       cat_stim=="Off" ~ round(n_desats/TST_off$TST_hr,1))) -> desat_summary
+  mutate(ODI=case_when(prior_to_desat=="On" ~ round(n_desats/TST_on$TST_hr,1),
+                       prior_to_desat=="Off" ~ round(n_desats/TST_off$TST_hr,1))) %>% 
+  filter(!is.na(prior_to_desat))-> desat_summary
 
 desat_summary %>% 
-  ggplot(aes(x=sort(cat_stim), y=ODI,fill=cat_stim)) +
+  ggplot(aes(x=sort(prior_to_desat), y=ODI,fill=prior_to_desat)) +
   geom_bar(stat="identity",)+
   geom_text(aes(label=round(ODI,1)), vjust=-0.5,size=8) +
   labs(x="Stimulation", y="Oxygen Desaturation Index (Events/hr)") +
   scale_fill_manual(values=c(lunair_palette[4],lunair_palette[3])) +
   theme_lunair() ->desat_graph
 desat_graph
-ggsave(desat_graph, filename=here("figures/desat_graph.png"), width=8, height=9)
+ggsave(desat_graph, filename=paste0(output_path,"/ODI_summary_graph.png"), width=8, height=9)
 
 ##### Movement and arousal #####
 
@@ -191,14 +213,14 @@ mvmt_summary %>% ggplot(aes(x=sort(cat_stim), y=arousal_index, fill = cat_stim))
   geom_text(aes(label=round(arousal_index,1)), vjust=-0.5,size=8) +
   theme_lunair() -> arousal_graph
 arousal_graph
-ggsave(arousal_graph, filename=here("figures/arousal_graph.png"), width=8, height=9)
+ggsave(arousal_graph, filename=paste0(output_path,"/arousal_graph.png"), width=8, height=9)
 
 
 ##### Combine all together into summaries:
 
 #make pretty summary summary table synthesizing all of the above: 
 merged_table<-merge(summary_table,mvmt_summary,by="cat_stim")
-merged_table<-merge(merged_table,desat_summary,by="cat_stim") %>% 
+merged_table<-merge(merged_table,desat_summary,by.x="cat_stim",by.y="prior_to_desat") %>% 
   select(!c("mvmts","resp.arousal","spont.arousal","n_desats","mean_dur_desats","total_AHI_events","all_arousals")) 
 
 
@@ -224,7 +246,7 @@ ordered_table%>%
   ),
   rows = NULL)->pretty_summary
 pretty_summary
-ggsave(pretty_summary, filename=here("figures/summary_table.png"), width=8, height=4)
+ggsave(pretty_summary, filename=paste0(output_path,"/summary_table.png"), width=8, height=4)
 
 ordered_table %>% select(!c("ODI","Arousals/hr")) %>%
   ggtexttable(theme = ttheme("classic",
@@ -236,7 +258,7 @@ ordered_table %>% select(!c("ODI","Arousals/hr")) %>%
                                                              face = "bold"),
   ),
   rows = NULL)->pretty_AHI_only
-ggsave(pretty_AHI_only, filename=here("figures/AHI_only_summary.png"), width=8, height=4)
+ggsave(pretty_AHI_only, filename=paste0(output_path,"/AHI_only_summary.png"), width=8, height=4)
 # 
 # #mosaic plot
 # events_of_interest %>% 
