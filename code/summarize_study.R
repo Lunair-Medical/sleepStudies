@@ -56,7 +56,7 @@ fp<-dlgOpen(
 #set the default directory to the directory of the file selected:
 patient_dir= str_extract(fp, ".*[\\\\/]")
 
-#dialog box to select where the summaryfigures will be saved: 
+#dialog box to select where the summary figures will be saved: 
 output_path<-dlgDir(
   title = "Select the output directory for figures",
   default=patient_dir)$res
@@ -101,7 +101,7 @@ data %>% group_by(cat_stim) %>% summarize(n=n())
 data %>% 
   
   mutate(AHI_events=case_when(Event %in% c("A. Mixed", "A. Obstructive", "A. Central", "Hypopnea","Apnea", #general hyp and ap
-                                           "H. Obstructive") ~ 1,
+                                           "H. Obstructive", "H.Mixed") ~ 1,
                               TRUE ~ 0)) %>%
   mutate(ODI_events=case_when(Event == "Desat" ~ 1,
                               TRUE ~ 0)) %>%
@@ -111,7 +111,9 @@ data %>%
 
 # filter on sleep epochs
 sleep_epochs<-data %>% 
-  filter(Event %in% c("N1","N2", "N3", "REM"))
+  filter(Event %in% c("N1","N2", "N3", "REM","Wake")) %>%
+  mutate(start_time=as_hms(start_time)) %>%
+  mutate(end_time=as_hms(end_time))
 
 sleep_epochs%>%
   group_by(Event) %>% 
