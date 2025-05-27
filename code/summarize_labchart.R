@@ -8,10 +8,12 @@ library(here)
 library(hms)
 library(data.table)
 
-therapy_stim_level<-325 #what value is considered therapeutic, will vary by patient
+therapy_stim_level<-500 #what value is considered therapeutic, will vary by patient
 
 #set the patient directory
-patient_dir<-dlgOpen("Select the patient directory"),
+patient_dir<-dlgOpen("Select the patient directory",
+                     caption = "Select the patient directory",
+                     default = "C:/Users/MegMcEachram/Lunair Medical/R&D - Documents/FiH Data/ECLIPSE 1 - Paraguay") 
 set_here(patient_dir)
 
 output_dir<-here(_insert path to summary folder) #sets the output filepath 
@@ -157,8 +159,25 @@ all_data %>%
   mutate(stim_therapeutic = case_when(smoothed_stim_numeric > therapy_stim_level ~ 1, #if stim is above the therapeutic level, set stim binary to 1
                                  TRUE ~ 0)) -> all_data #otherwise set to zero
 
+#need new AHI columns:
+new_AHI_columns<-c("sum_A. Mixed" ,"sum_A. Obstructive" ,
+                   "sum_A. Central", "sum_Hypopnea"  ,"sum_H. Obstructive")   
+
+#add a column that counts the number of AHI events in each epoch
+all_data %>%
+  mutate(AHI_sum = rowSums(across(any_of(new_AHI_columns), ~ !is.na(.x) & .x != 0))) -> all_data
+  
+
+
 #summarize and calculate number of events in each: 
-all_data %>% group_by(stim_therapeutic) %>% 
+all_data %>% filter (sleep_stage != "Wake") %>% group_by(stim_therapeutic) %>% 
   summarise(n_epochs = n(),
-            n_AHI_events=rowSums(!is.na(across(any_of(event_cols)))),
-            n_desat = sum(!is.na(sum_Desat))) -> summary_table
+            n_AHI_events=sum(AHI_sum),
+            n_ODI_events = sum(!is.na(sum_Desat)))-> summary_table
+
+summary_table %>% 
+  mutate(TST=paste(round(n_epochs*30/3600,1),"hours")) %>%
+  mutate(AHI=round(n_AHI_events/(n_epochs*30/3600),1)) %>%
+  mutate(ODI=round(n_ODI_events/(n_epochs*30/3600),1))
+            
+            
