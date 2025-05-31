@@ -7,7 +7,7 @@ library(tidyverse)
 library(here)
 library(hms)
 library(data.table)
-
+library(svDialogs)
 therapy_stim_level<-500 #what value is considered therapeutic, will vary by patient
 
 #set the patient directory
@@ -20,6 +20,7 @@ output_dir<-here(_insert path to summary folder) #sets the output filepath
 lcfp<- file path for the labchart data pad export
 
 labchart_raw<-read_excel("C:/Users/MegMcEachram/Downloads/exported lab chart data pad from 60 day psg from 201 005.xlsx")
+
 samples_in_block<-33861
 block_start<-lubridate::ymd_hms(" 2025-05-18 20:54:19")
 block_end<-block_start + seconds(samples_in_block)
@@ -29,7 +30,9 @@ second_timestep<-seq(block_start, block_end-seconds(1), by = "1 sec") #make a ti
 #clean up the labchart read in: 
 labchart_raw%>% 
   slice(-c(1,2)) %>% #remove first rows that contain the sample info and units
-  select(-c(...22,...23,...24,...25,...26)) -> labchart #remove random extra columns
+  select(-c("Abdomen"    ,      "Audio.Volume.dB" ,"ECG","Flow"  ,"Heart.Rate",
+            "Left.Leg" ,        "PosAngle"   ,      "Pulse"  ,"Saturation"  ,"Y.Axis" ,
+            "Acceleration..Z.", "Impedance"  ,...22,...23,...24,...25,...26)) -> labchart #remove random extra columns
 
 
 labchart[1:samples_in_block,]->labchart #chop off empty rows at the end
@@ -43,7 +46,7 @@ labchart %>%
 labchart$stim_numeric->all_stim_values
 nonzero_logical<-all_stim_values != 0
 r<-rle(nonzero_logical) #run length encoding to find runs of "true" (nonzero) and the length of those runs
-long_nonzero_runs<-which(r$values==TRUE & r$lengths>3) #find the runs of nonzeros that are longer than 3, since actual stim bursts always come in 3.
+long_nonzero_runs<-which(r$values==TRUE & r$lengths>6) #find the runs of nonzeros that are longer than 3, since actual stim bursts always come in 3.
 
 # Compute the end positions of each run
 ends <- cumsum(r$lengths)
