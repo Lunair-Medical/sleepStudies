@@ -242,16 +242,35 @@ lc3 %>% group_by(stim_series) %>%
          stim_series_end=last(datetime),
          stim_series_duration=stim_series_end-stim_series_start)->lc4
 
-#want only unique values so we don't double count a series (bc its duration occurs on multiple rows)
-df_unique <- lc4 %>%
-  group_by(stim_series, running_stim_tracker) %>%
-  summarize(stim_series_duration = first(stim_series_duration), .groups = "drop")
-
-### ^ I think this is wrong bc i dont actually want stim series duration i want the duration across the whole tracker run 
-# Now, sum the durations for each stim level, using the unique stim series:
-stim_summary <- df_unique %>%
-  group_by(running_stim_tracker) %>%
-  summarize(total_duration = sum(stim_series_duration, na.rm = TRUE))
+#summarize the time at each stim level (HAVE TO do it this way to add up all the time w/in a run and not just the seconds that stim was literally on)
+stim_summary <- lc4 %>%
+  arrange(datetime) %>%  # ensure data is ordered by time
+  mutate(
+    tracker_run_id = cumsum(running_stim_tracker != lag(running_stim_tracker, default = first(running_stim_tracker)))
+  ) %>%
+  group_by(tracker_run_id, running_stim_tracker) %>%
+  summarise(
+    interval_start = first(datetime),
+    interval_end = last(datetime),
+    interval_duration = interval_end - interval_start,
+    .groups = "drop"
+  )
+# lc4 %>% group_by(stim_series) %>% 
+#   summarize(stim_series_start=first(datetime),
+#          stim_series_end=last(datetime),
+#          stim_series_duration=stim_series_end-stim_series_start,
+#          running_stim_tracker=first(running_stim_tracker))->lc5
+# 
+# # #want only unique values so we don't double count a series (bc its duration occurs on multiple rows)
+# # df_unique <- lc4 %>%
+# #   group_by(stim_series, running_stim_tracker) %>%
+# #   summarize(stim_series_duration = first(stim_series_duration), .groups = "drop")
+# 
+# ### ^ I think this is wrong bc i dont actually want stim series duration i want the duration across the whole tracker run 
+# # Now, sum the durations for each stim level, using the unique stim series:
+# stim_summary <- lc5 %>%
+#   group_by(running_stim_tracker) %>%
+#   summarize(total_duration = sum(stim_series_duration, na.rm = TRUE))
 # mvd %>% group_by(stim_series) %>% summarize(n=n(),
 #                                             value=first(middle_values),
 #                                             stim_series_start=first(mv_times),
@@ -310,11 +329,11 @@ matched_stim_by_run %>%
 
 
 #now merge with the stim summary:
-all_summary <- merge(run_summary, stim_summary, by = "running_stim_tracker",all.y = T) %>%
-  replace_na(list(n_events = 0)) #have to have this in case there was a stim level that didn't appear in events 
-
+all_summary <- merge(run_summary, stim_summary, by = "running_stim_tracker") %>%
+  replace_na(list(n_events = 0)) %>% #have to have this in case there was a stim level that didn't appear in events 
+  select(!c(interval_end,interval_start,tracker_run_id))
 all_summary %>% 
-  mutate(duration_hours=as.numeric(total_duration,"hours")) %>%
+  mutate(duration_hours=as.numeric(interval_duration,"hours")) %>%
   mutate(AHI=n_events/duration_hours) %>%
   mutate(sub_therapeutic=ifelse(running_stim_tracker<500,1,0)) %>%
   mutate(Stim500=ifelse(running_stim_tracker>=500,1,0)) %>%
