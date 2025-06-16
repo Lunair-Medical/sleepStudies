@@ -1,8 +1,9 @@
-# Code for parsing, summarizing, and generating figures and summary graphics for scored PSG event grids
-#Author: Meg McEachran
-#Date Last Updated: 5/19/2025
+# Title: Summarize PSG study data
+# Description: Code for parsing, summarizing, and generating figures and summary graphics for whole-night PSG data
+# Author: Meg McEachran
+# Date Last Updated: 6/9/2025
 
-#setup
+#### 1. Initial Setup
 rm(list=ls())
 
 ## Load necessary libraries
@@ -13,10 +14,20 @@ library(ggmosaic)
 library(lubridate)
 library(ggpubr)
 library(svDialogs)
+library(data.table)
+## Source
+source(here("code/helper_fxns.R")) #load helper functions
 
 ## set paths
 #output_path<-here("figures")
-default_dir<-here("data/original")
+default_dir<-"C:/Users/MegMcEachram/Downloads"
+
+
+# 
+# #dialog box to select where the summary figures will be saved: 
+# output_path<-dlgDir(
+#   title = "Select the output directory for figures",
+#   default=patient_dir)$res
 
 ## graphic settings
 lunair_palette=c(
@@ -45,7 +56,8 @@ theme_lunair <- function(textsize=24){
 ## value settings
 stim_threshold<-200 #threshold value for the 'on'/off designation for stim
 
-## read in data in the form of a (scored) event grid out of Nox
+#### 2. Read in data 
+## read in event data in the form of a (scored) event grid out of Nox
 fp<-dlgOpen(
   title = "Select the scored event grid file",
   default=default_dir,
@@ -53,13 +65,51 @@ fp<-dlgOpen(
   multi = FALSE,
   filters = dlgFilters[c("CSV files", "All files")])$res
 
+
 #set the default directory to the directory of the file selected:
 patient_dir= str_extract(fp, ".*[\\\\/]")
 
-#dialog box to select where the summary figures will be saved: 
-output_path<-dlgDir(
-  title = "Select the output directory for figures",
-  default=patient_dir)$res
+## read in the waveform data in the form of data that was exported from Labchart as raw data
+filepath<-dlgOpen(
+  title = "Select the labchart .txt file",
+  default=default_dir,
+  #default = here("data/original/0513_board_meeting/Scored-201-010-30Day_Event Grid-Stim.csv"),
+  multi = FALSE,
+  filters = dlgFilters[c("CSV files", "All files")])$res
+
+# #make a con for opening the lab chart text file since it's so big, read it in as binary:
+# con<-file(filepath,"rb")
+# all_data<-readBin(con=con,what = "raw",n=1e06) #read in the first 1 million bytes
+# head_all_data<-all_data[1:1000]
+# rawToChar(head_all_data)
+# whole_thing<-read_tsv(wfp)
+
+## Read data and downsample:
+
+#use the helper function to parse .txt into a data.table: 
+all_data_dt<-parse_labchart_txt(filepath,downsample_rate = 5)
+head(all_data_dt)
+
+## clean data:
+
+# parse date: 
+all_data_dt[, date := as.IDate(date_char, format = "%m/%d/%Y")]    
+
+#numeric columns: 
+num_cols<-setdiff(colnames(all_data_dt),c("date_char","date")) #all columns except date and time
+cols_to_zero<-c("stimulation","phasic_amplitude")
+cols_to_round<-c("pulse","saturation","heart_rate")
+
+#make changes to the columns:
+all_data_dt[,(num_cols) := lapply(.SD,as.numeric), .SDcols = num_cols] #make numeric 
+all_data_dt[,(cols_to_round) := lapply(.SD,round), .SDcols = cols_to_round] #round
+all_data_dt[, (cols_to_zero) := lapply(.SD, function(x) fifelse(abs(x)<1,0,x)), .SDcols = cols_to_zero] #zero out columns
+
+#check the structure of dt: 
+str(all_data_dt)
+
+#convert time 
+
 
 ### DATA ANALYSIS 
 
