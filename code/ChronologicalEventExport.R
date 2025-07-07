@@ -7,24 +7,24 @@ library(flextable)        # nice table with cell-level formatting
 library(officer)          # save_as_docx(), if you want a Word file
 library(svDialogs)        # for file picker
 library(lubridate)        # ymd_hms()
+library(here)
 
 ###############################################################################
 # 1.  File location                                                           #
 ###############################################################################
-efault_dir <- "C:/Users/dbour/OneDrive/Documents/R-Projects/ChronologicalEventExport"
+default_dir <- here("data/")
 
 file_path <- dlg_open(
   default = default_dir,
   title = "Select Device Log CSV File",
-  filters = matrix(c("CSV files", "*.csv"), ncol = 3)
+  #filters = matrix(c("CSV files", "*.csv"), ncol = 3)
 )$res
 
-
-log_raw <- read_csv(
-  file_path,
-  col_types = cols(.default = "c")   # <- keep everything as character on read-in
-) |> 
-  janitor::clean_names()             # tidier col-names: timestamp, event, details ...
+#read in raw data... NOTE this will likely throw a warning, use problems(log_raw) to check but it should be fine 
+log_raw <- read_csv(file_path) %>% clean_names()
+#   col_types = cols(.default = "c")   # <- keep everything as character on read-in
+# ) |> 
+ # janitor::clean_names()             # tidier col-names: timestamp, event, details ...
 
 ###############################################################################
 # 2.  Parameters we keep from LogProgramming                                  #
@@ -32,7 +32,7 @@ log_raw <- read_csv(
 keep_params <- c(
   "PhasicTime", "TherapyRate", "RiseTime", "FallTime",
   "PhasicAmplitude", "PulseWidth", "Frequency",
-  "UprightPause", "RollPause"
+  "UprightPause", "RollPause", "TherapyDelay","RollPauseMode"
 )
 
 ###############################################################################
@@ -51,8 +51,7 @@ abbr_unit <- function(u_raw) {
 ###############################################################################
 # 4.  Read CSV & classify rows                                                #
 ###############################################################################
-log_df <- read_csv(file_path, col_types = cols(.default = "c")) %>%
-  clean_names() %>%
+log_df <- log_raw %>%
   mutate(
     date       = mdy_hms(date),
     event_type = case_when(
@@ -61,6 +60,7 @@ log_df <- read_csv(file_path, col_types = cols(.default = "c")) %>%
       str_detect(event, regex("LogTherapyStart",           TRUE)) ~ "LogTherapyStart",
       str_detect(event, regex("LogTherapyEnd",             TRUE)) ~ "LogTherapyEnd",
       str_detect(event, regex("LogPositionChange",         TRUE)) ~ "LogPositionChange",
+      str_detect(event, regex("LogProgAlgoLL",          TRUE)) ~ "LogProgAlgoLL",
       TRUE ~ "OTHER")
   ) %>%
   filter(event_type != "OTHER") %>%
@@ -258,8 +258,11 @@ ft <- width(ft, j = param_cols,   width = 0.8)
 # 12.  Save to Word (landscape)                                               #
 ###############################################################################
 landscape <- prop_section(page_size = page_size(orient = "landscape"))
+output_dir <- here("reports/")
+filename<-"programming_changes_log.docx"
+output_filepath<-file.path(output_dir, filename)
 save_as_docx(ft,
-             path       = "C:/Users/dbour/OneDrive/Documents/R-Projects/ChronologicalEventExport/Programming_Changes_Table.docx",
+             path       = output_filepath, #"C:/Users/dbour/OneDrive/Documents/R-Projects/ChronologicalEventExport/Programming_Changes_Table.docx",
              pr_section = landscape)
 
 # To view in RStudio instead of Word:
