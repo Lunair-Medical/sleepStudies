@@ -1,3 +1,7 @@
+# Code to produce the chronological summary of programming changes made during PSGs
+# Originally created by D Bourn and cGPT, edited by Meg McEachran
+# 7/8/25 last updated 
+
 ###############################################################################
 # 0.  Libraries                                                               #
 ###############################################################################
@@ -9,6 +13,7 @@ library(svDialogs)        # for file picker
 library(lubridate)        # ymd_hms()
 library(here)
 
+rm(list=ls())
 ###############################################################################
 # 1.  File location                                                           #
 ###############################################################################
@@ -139,7 +144,32 @@ amp_tbl <- log_df %>%
     step_mA   = as.numeric(str_remove(AmplitudeStep, "\\s*mA$")),
     amp_delta = if_else(tolower(WasIncreased) == "yes",  step_mA, -step_mA)
   ) %>%
-  select(date, event_type, amp_delta)
+  # Add all param_cols as NA columns
+  mutate(!!!setNames(rep(list(NA_character_), length(param_cols)), param_cols)) %>%
+  select(date, event_type, all_of(param_cols), amp_delta)
+
+
+###############################################################################
+# 6C.  Parse LogProgAlgoLL rows                                               #
+###############################################################################
+ll_tbl <- log_df %>%
+  filter(event_type == "LogProgAlgoLL") %>%
+  separate_rows(data, sep = " - ") %>%
+  mutate(
+    key = str_trim(str_extract(data, "^.*?(?=\\s*=)")),
+    val = str_trim(str_extract(data, "(?<=\\[).*(?=\\])"))
+  ) %>%
+  filter(key == "Enable Stimulation Output") %>%
+  mutate(
+    LL_enabled = as.integer(val),
+    LL_onoff = case_when(
+      LL_enabled == 1 ~ "on",
+      LL_enabled == 0 ~ "off",
+      TRUE ~ NA_character_
+    )
+  ) %>%
+  select(date, event_type, LL_onoff)
+
 
 ###############################################################################
 # 7.  Pivot programming wide & rename headers                                 #
@@ -174,12 +204,13 @@ prog_wide <- prog_wide %>%
   mutate(amp_val = as.numeric(`PhasicAmplitude (mA)`))
 
 ###############################################################################
-# 8.  Placeholders for TherapyStart / End / PositionChange                    #
+# 8.  Placeholders for TherapyStart / End / PositionChange / LogProgAlgoLL    #
 ###############################################################################
 placeholders <- log_df %>%
   filter(event_type %in% c("LogTherapyStart",
                            "LogTherapyEnd",
-                           "LogPositionChange")) %>%
+                           "LogPositionChange",
+                           "LogProgAlgoLL")) %>%
   select(date, event_type) %>%
   bind_cols(as_tibble(setNames(rep(list(NA_character_), length(param_cols)),
                                param_cols))) %>%
@@ -188,12 +219,21 @@ placeholders <- log_df %>%
 ###############################################################################
 # 9.  Combine & sort chronologically                                          #
 ###############################################################################
+# Ensure ll_tbl has all columns
+ll_tbl_full <- ll_tbl %>%
+  mutate(!!!setNames(rep(list(NA_character_), length(param_cols)), param_cols)) %>%
+  mutate(amp_val = NA_real_) %>%
+  select(date, event_type, all_of(param_cols), amp_val, LL_onoff)
+
+
 combined <- bind_rows(
-  prog_wide,
+  prog_wide %>% mutate(LL_onoff = NA_character_),
   amp_tbl,
-  placeholders
+  ll_tbl_full,
+  placeholders %>% mutate(LL_onoff = NA_character_),
 ) %>%
   arrange(date)
+
 
 ###############################################################################
 # 10.  Forward-fill parameters & compute amplitude                            #
@@ -222,7 +262,7 @@ combined <- combined %>%
 # 11.  Table -> flextable                                                     #
 ###############################################################################
 tbl <- combined %>%
-  select(date, event_type, all_of(param_cols))
+  select(date, event_type, LL_onoff, any_of(param_cols))
 
 ft <- flextable(tbl)
 
@@ -266,4 +306,4 @@ save_as_docx(ft,
              pr_section = landscape)
 
 # To view in RStudio instead of Word:
-# print(ft)
+print(ft)
