@@ -5,6 +5,7 @@
 ###############################################################################
 # 0.  Libraries                                                               #
 ###############################################################################
+rm(list=ls())
 library(tidyverse)        # dplyr, tidyr, stringr, readr, etc.
 library(janitor)          # clean_names()
 library(flextable)        # nice table with cell-level formatting
@@ -13,7 +14,6 @@ library(svDialogs)        # for file picker
 library(lubridate)        # ymd_hms()
 library(here)
 
-rm(list=ls())
 ###############################################################################
 # 1.  File location                                                           #
 ###############################################################################
