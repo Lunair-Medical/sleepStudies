@@ -18,13 +18,14 @@ library(here)
 ##### 1. Event Grid Data #####################
 
 ## read in event data in the form of a (scored) event grid out of Nox (make sure it's one with a 'sleep' column)
-eg_fp<-dlgOpen(
-  title = "Select the scored event grid file",
-  default=default_dir,
-  #default = here("data/original/0513_board_meeting/Scored-201-010-30Day_Event Grid-Stim.csv"),
-  multi = FALSE,
-  filters = dlgFilters[c("CSV files", "All files")])$res
+# eg_fp<-dlgOpen(
+#   title = "Select the scored event grid file",
+#   default=default_dir,
+#   #default = here("data/original/0513_board_meeting/Scored-201-010-30Day_Event Grid-Stim.csv"),
+#   multi = FALSE,
+#   filters = dlgFilters[c("CSV files", "All files")])$res
 
+eg_fp<-here("data/201-013_60-day_EventGrid_26_Jun-2025.csv")
 #read in the event grid with the scored events 
 event_grid<-read.csv(eg_fp) %>% clean_names()
 
@@ -137,11 +138,13 @@ ODI_whole_night= all_events %>%
 # read in the device log data
 default_dir <- here("data/")
 
-file_path <- dlg_open(
-  default = default_dir,
-  title = "Select Device Log CSV File",
-  #filters = matrix(c("CSV files", "*.csv"), ncol = 3)
-)$res
+# file_path <- dlg_open(
+#   default = default_dir,
+#   title = "Select Device Log CSV File",
+#   #filters = matrix(c("CSV files", "*.csv"), ncol = 3)
+# )$res
+
+file_path<-here("data/DeviceLog_[SN#000135]_26_06_2025_06_06_42.csv")
 
 #read in raw data... NOTE this will likely throw a warning, use problems(log_raw) to check but it should be fine 
 log_raw <- read_csv(file_path) %>% clean_names()
@@ -295,15 +298,6 @@ combined %>%
 
 # need to make a funning phasic amp trace based on log programming changes and log change amp by order rows
 
-# Example data frame
-df <- data.frame(
-  event = c("LogProgrammingChanges", "LogChangeAmpByOrder", "LogProgrammingChanges", "LogChangeAmpByOrder", "LogChangeAmpByOrder"),
-  phasic_amplitude = c(1.0, NA, 1.5, NA, NA),
-  step_change_size = c(NA, 0.05, NA, 0.05, 0.05),
-  step_direction = c(NA, 1, NA, -1, 1),
-  stringsAsFactors = FALSE
-)
-
 # Initialize running amplitude vector
 running_amp <- numeric(nrow(df))
 
@@ -368,6 +362,8 @@ new_df <-new_df %>%
 # 1. algo values based on algo session, and
 # 2. therapy values based on therapy session
 
+### FOR CAMDEN: This is about where I think things go off the rails. ###
+
 #1. Fill down based on algo session:
 new_df %>%
   group_by(algo_session_id) %>%
@@ -384,11 +380,6 @@ new_df %>%
        upright_pause, roll_pause, max_phasic_amplitude, min_phasic_amplitude,
        amplitude_step,roll_pause_mode, .direction = "down") %>%
   ungroup() -> new_df
-
-# ^^^ This presently is not working because the therapy session ID column is ffull of NAs 
-# after the 'complete' command, so i need to actually go back and fill down the therapy session
-# based on what it was assigned as before. importanlyt need to make sure the relevant 
-# last logprog row stays included in the therapy session, so i think it's just a matter of filling down the columns. '
 
 #### Add Roll Pauses ####
 
