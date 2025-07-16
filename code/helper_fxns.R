@@ -41,6 +41,7 @@ library(janitor)
 
   ### Read in and name the data
 parse_labchart_txt<-function(fp, downsample_rate){
+  library(data.table)
   dt<-data.table::fread(fp, strip.white = TRUE, fill = T)  #fp can be the raw labchart txt file
   
   # Add channel names
@@ -48,12 +49,19 @@ parse_labchart_txt<-function(fp, downsample_rate){
   names<-unlist(str_split(names_all, pattern = "\t")) %>%
    .[!.%in% c("ChannelTitle=","NA")] %>% 
     make_clean_names() # %>%  
-  names<-c("sec_since_midnight","date_char",names)
   
+  #make new col names but check you have right # of cols
+  names<-c("sec_since_midnight",
+          "date", #comment this out if the labchart file doesn't have date column
+           names)
+  
+  if (length(names)!=ncol(dt)){
+    stop("Number of column names does not match number of columns in the data.")
+  }
   
   # Remove the header rows from the main data
-  dt <- dt %>% slice(-c(1:(which(dt[,1]=="Range=")+1)))
-  colnames(dt)<-names 
+  dt <- dt[-c(1:(which(dt[[1]]=="Range=")+1)), ]
+  data.table::setnames(dt, names)
   
   ### Downsampling:
   if (missing(downsample_rate)==TRUE) {

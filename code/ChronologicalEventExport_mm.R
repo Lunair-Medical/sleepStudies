@@ -2,6 +2,8 @@
 # Originally created by D Bourn and cGPT, edited by Meg McEachran
 # 7/8/25 last updated 
 
+#### AS OF 7/14 THIS DOESN'T WORK, USE DAVID'S VERSION
+
 ###############################################################################
 # 0.  Libraries                                                               #
 ###############################################################################
@@ -145,8 +147,8 @@ amp_tbl <- log_df %>%
     amp_delta = if_else(tolower(WasIncreased) == "yes",  step_mA, -step_mA)
   ) %>%
   # Add all param_cols as NA columns
-  mutate(!!!setNames(rep(list(NA_character_), length(param_cols)), param_cols)) %>%
-  select(date, event_type, all_of(param_cols), amp_delta)
+  mutate(!!!setNames(rep(list(NA_character_), length(keep_cols), keep_cols))) %>%
+  select(date, event_type, all_of(keep_cols), amp_delta)
 
 
 ###############################################################################

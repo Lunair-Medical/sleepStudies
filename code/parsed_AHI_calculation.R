@@ -1,10 +1,11 @@
-# Code to estimate AHI for different phases of the night
-#Designed to read in the device log file and the Nox event logs
+## Code to estimate AHI for different phases of the night
+## Designed to read in the device log file and the Nox event logs
 # 
-# 7/8/25 last updated 
+# 7/15/25 last updated 
 
-#set up and load libraries 
+# set up and load libraries 
 rm(list=ls())
+default_dir <- here("data/") # set default directory for file picker
 
 library(tidyverse)        # dplyr, tidyr, stringr, readr, etc.
 library(janitor)          # clean_names()
@@ -14,9 +15,126 @@ library(svDialogs)        # for file picker
 library(lubridate)        # ymd_hms()
 library(here)
 
-###############################################################################
-# 1.  File location                                                           #
-###############################################################################
+##### 1. Event Grid Data #####################
+
+## read in event data in the form of a (scored) event grid out of Nox (make sure it's one with a 'sleep' column)
+eg_fp<-dlgOpen(
+  title = "Select the scored event grid file",
+  default=default_dir,
+  #default = here("data/original/0513_board_meeting/Scored-201-010-30Day_Event Grid-Stim.csv"),
+  multi = FALSE,
+  filters = dlgFilters[c("CSV files", "All files")])$res
+
+#read in the event grid with the scored events 
+event_grid<-read.csv(eg_fp) %>% clean_names()
+
+#get the patient identifier off the event grid:
+eg_filename<-basename(eg_fp)
+
+#check the structure of the event grid:
+str(event_grid)
+
+#clean the event grid data (this will throw warnings about coercing factors to numeric, but that's okay):
+event_grid %>%
+  slice(-1) %>% # remove first row
+  #  mutate(phasic_amplitude=as.numeric(phasic_amplitude_max)) %>% #make numeric
+  #  mutate(stimulation=as.numeric(stimulation_max)) %>% #make numeric
+  mutate(start_time=as_hms(start_time)) %>% #this will add a date; disregard the date here
+  mutate(end_time=as_hms(end_time)) %>%
+  drop_na()-> clean_events
+
+#grab analysis start and end time off the nox event grid and prompt if it doesn't exist in the event grid::
+start_time <- clean_events %>%
+  filter(event == "Analysis Start") %>%
+  pull(start_time) %>%
+  first()
+
+if (length(start_time)!=1) {
+  stop("Analysis Start time not found in the event grid. Please provide a start time")
+  st<-dlg_input(message="Please provide an analysis start time.")$res
+  start_time <- as_hms(st) #convert to hms
+}
+
+end_time <- clean_events %>%
+  filter(event == "Analysis End") %>%
+  pull(end_time) %>%
+  first()
+if (length(end_time)!=1) {
+  message("Analysis End time not found in the event grid. Please provide an end time")
+  en<-dlg_input(message="Please provide an analysis end time.")$res
+  end_time <- as_hms(en) #convert to hms
+}
+
+
+#check if there's already a date column:
+if (!"date" %in% names(clean_events)) {
+  
+  #if not, create a date column based on user input:
+  st_dt <- dlg_input(message="Please provide a start date (YYYY-MM-DD):")$res
+  start_date<-as.Date(st_dt) #convert to Date
+  end_date<-start_date + days(1) #assume the same date for now
+
+  clean_events <- clean_events %>%
+    mutate(
+      date = if_else(as.numeric(start_time) < 12*60*60, end_date, start_date))  #events before noon automatically assigned to next day 
+}
+
+#if date already exists as a column, just ensure it's in the right format and concatenate:
+clean_events <- clean_events %>% mutate(
+    start_datetime = as.POSIXct(date) + as.numeric(start_time),
+    end_datetime = as.POSIXct(date) + as.numeric(end_time)
+  )
+
+#put them together into a datetime: 
+analysis_start_datetime<- as.POSIXct(start_date) + as.numeric(start_time)
+analysis_end_datetime <- as.POSIXct(end_date) + as.numeric(end_time)
+
+
+#filter by event:
+sleep_epochs<-clean_events %>% 
+  filter(event %in% c("N1","N2", "N3", "REM","Wake")) %>%
+  mutate(duration=as.numeric(duration))  #duration in seconds
+
+wake_epochs<-sleep_epochs %>% filter (event=="Wake")
+
+mvmts<-clean_events %>% 
+  filter(event %in% c("Movement","Spontaneous Arousal","Respiratory Arousal")) %>%
+  mutate(start_time=as_hms(start_time)) 
+
+all_events<-clean_events %>%
+  filter(event %in% c("A. Mixed", "A. Obstructive", "A. Central", "Hypopnea","Apnea", #general hyp and ap
+                      "H. Obstructive", "H.Mixed","Desat")) %>%
+  filter(sleep!="Wake") #double check on this with david...not sure how there can be events if it's 'wake'
+
+
+#now should be able to evaluate the TST:
+total_sleep_time<-sleep_epochs %>%
+  filter(event!="Wake") %>%
+  summarize(TST=sum(duration)) %>%
+  unlist() %>%
+  unname() #total sleep time in seconds
+
+tst_hours<-round(total_sleep_time/3600,1) #convert to hours
+
+#calculate whole night AHI:
+AHI_whole_night= all_events %>%
+  filter(event !="Desat") %>%
+  summarize(AHI=round(n()/total_sleep_time*3600,1)) #AHI in events per hour
+
+#this is within 0.1 of the AHI calculated in the event grid, so it seems to be working okay.
+
+#calculate whole night ODI:
+ODI_whole_night= all_events %>%
+  filter(event =="Desat") %>%
+  summarize(ODI=round(n()/total_sleep_time*3600,1)) #ODI in events per hour
+
+
+### At this point, the event grid data is loaded and ready for analysis.
+
+#############################################
+#### 2. Device Log Data #####################
+#############################################
+# read in the device log data
 default_dir <- here("data/")
 
 file_path <- dlg_open(
@@ -31,7 +149,7 @@ log_raw <- read_csv(file_path) %>% clean_names()
 #clean and parse data
 log_df <- log_raw %>%
   mutate(
-    date       = mdy_hms(date),
+    date_mdy=mdy_hms(date), #convert date to POSIXct 
     event_type = case_when(
       str_detect(event, regex("LogProgramming",            TRUE)) ~ "LogProgramming",
       str_detect(event, regex("LogChangeAmplitudeByOrder", TRUE)) ~ "LogChangeAmp",
@@ -39,11 +157,37 @@ log_df <- log_raw %>%
       str_detect(event, regex("LogTherapyEnd",             TRUE)) ~ "LogTherapyEnd",
       str_detect(event, regex("LogPositionChange",         TRUE)) ~ "LogPositionChange",
       str_detect(event, regex("LogProgAlgoLL",          TRUE)) ~ "LogProgAlgoLL",
+      str_detect(event, regex("LogBLEConnection",        TRUE)) ~ "LogBLEConnection",
+      str_detect(event, regex("LogBLEDisconnection",     TRUE)) ~ "LogBLEDisconnection",
       TRUE ~ "OTHER")
   ) %>%
   filter(event_type != "OTHER") %>%
   arrange(date)
 
+# 1. Parse the log change amp by order rows: 
+amp_tbl <- log_df %>%
+  filter(event_type == "LogChangeAmp") %>%
+  separate_rows(data, sep = " - ") %>%
+  mutate(
+    key = str_trim(str_extract(data, "^.*?(?=\\s*=)")),
+    val = str_trim(str_extract(data, "(?<=\\[).*(?=\\])"))
+  ) %>%
+  pivot_wider(id_cols = c(date, event_type),
+              names_from  = key,
+              values_from = val) %>%
+  mutate(
+    step_mA   = as.numeric(str_remove(AmplitudeStep, "\\s*mA$")),
+    amp_delta = if_else(tolower(WasIncreased) == "yes",  step_mA, -step_mA)
+  ) %>%
+  #select(date, event_type, amp_delta) %>%
+  mutate(date_mdy=mdy_hms(date))  %>%  filter(OrderFromMobileApp != "Yes")  #only keep rows from the mobile app
+
+  filter(date_mdy >= analysis_start_datetime & date_mdy <= analysis_end_datetime) 
+
+# NOTE: It is possible that at this point there are 0 rows that are included. This would be the case if no changes were made during the PSG using the logchange amp by order buttons
+
+
+#2. Parse log data then, need to get the log 'data' column parsed out into different columns:
 #separate the data column into independent columns
 id_cols <- setdiff(names(log_df), "data")
 
@@ -51,15 +195,35 @@ log_wide <- log_df %>%
   separate_rows(data, sep = " - ") %>% #breaks into rows
   mutate(
     key = str_trim(str_extract(data, "^.*?(?=\\s*=)")), #pull the column name
-    value = str_trim(str_extract(data, "(?<=\\[).*(?=\\])")) #pull the column value
+    value = str_trim(str_extract(data, "(?<=\\[).*?(?=\\])")) #pull the column value; added a ? after the .* to be 'non-greedy' grabbing the shortest match not the longest bc for some reason the log sometimes has ]] at the end of things
   ) %>%
   select(all_of(id_cols), key, value) %>%
   pivot_wider(names_from = key, values_from = value) %>% #make wide
   clean_names() #clean the new column names
 
+#filter data based on the analysis start and end:
+log_wide <- log_wide %>%
+  filter(date_mdy >= analysis_start_datetime & date_mdy <= analysis_end_datetime)
+  
+#3. Find and parse the last LogProgAlgoLL row before the analysis start time:
+algo_row_idx<-last(which(log_df$event_type=="LogProgAlgoLL" & 
+                log_df$date_mdy < analysis_start_datetime))
+
+#split out the algo row into separate columns:
+algo_row<- log_df[algo_row_idx,] %>% separate_rows(data, sep = " - ") %>% #breaks into rows
+  mutate(
+    key = str_trim(str_extract(data, "^.*?(?=\\s*=)")), #pull the column name
+    value = str_trim(str_extract(data, "(?<=\\[).*?(?=\\])")) #pull the column value; added a ? after the .* to be 'non-greedy' grabbing the shortest match not the longest bc for some reason the log sometimes has ]] at the end of things
+  ) %>%
+  select(all_of(id_cols), key, value) %>%
+  pivot_wider(names_from = key, values_from = value) %>% #make wide
+  clean_names() #clean the new column names
+
+#leave this for now and bind later with the log data 
+
 #select down some of the information we want to keep
 log_wide %>%
-  select(c("date","event","event_type","device_mode","magnet_mode", "roll_pause_mode",
+  select(c("date_mdy","event","event_type","device_mode","magnet_mode", "roll_pause_mode",
                      "phasic_time" ,"therapy_rate","rise_time","fall_time","tonic_amplitude",
                      "phasic_amplitude","onset_ramp_time","ending_ramp_time","pulse_width",
                      "upright_pause","roll_pause" ,"max_phasic_amplitude","min_phasic_amplitude",
@@ -69,18 +233,17 @@ log_wide %>%
                      "lead_impedance", "therapy_duration", "therapy_end_cause", "was_increased",
                      "order_from_mobile_app" ,"posture"))->log_wide
 
-#write wider based on therapy start and end times 
+#make a therapy sessions df 
 st_idx<-which(log_wide$event_type=="LogTherapyStart")
 end_idx<-which(log_wide$event_type=="LogTherapyEnd")
 st_end_idx<-c(st_idx,end_idx)
-therapy_pairs<-data.frame(start_times=log_wide$date[st_idx],
-                          end_times=log_wide$date[end_idx])
+therapy_pairs<-data.frame(start_times=log_wide$date_mdy[st_idx], #start times from LogTherapyStart rows
+                          end_times=log_wide$date_mdy[end_idx]) #end times from LogTherapyEnd rows 
 therapy_pairs <- therapy_pairs %>% mutate(row_id=row_number()) #add a session id
  
 #create session ids
 log_wide <- log_wide %>%
-  mutate(therapy_session_id = cumsum(event_type == "LogTherapyStart"),
-         algo_session_id = cumsum(event_type == "LogProgAlgoLL")) 
+  mutate(therapy_session_id = cumsum(event_type == "LogTherapyStart"))
 
 #set up empty array to store which log programming rows are relevant: 
 keep_prog_df <- data.frame(keep_idx=logical(nrow(log_wide)))
@@ -93,13 +256,13 @@ for (i in 1:nrow(therapy_pairs)) {
   en <- therapy_pairs$end[i]
   
   # a) programming rows inside [start, end] should be kept:
-  inside <- which(log_df$event_type == "LogProgramming" &
-                    log_df$date >= st & log_df$date <= en)
+  inside <- which(log_wide$event_type == "LogProgramming" &
+                    log_wide$dae_mdy >= st & log_wide$date_mdy <= en)
   keep_prog_df$keep_idx[inside] <- TRUE
   
   # b) programming row immediately preceding start should be kept:
-  prev_idx <- max(which(log_df$event_type == "LogProgramming" &
-                          log_df$date < st))
+  prev_idx <- max(which(log_wide$event_type == "LogProgramming" &
+                          log_wide$date_mdy < st))
   if (length(prev_idx) && prev_idx > 0) keep_prog_df$keep_idx[prev_idx] <- TRUE
   
   # c) indicate which therapy session it belongs to
@@ -110,30 +273,122 @@ for (i in 1:nrow(therapy_pairs)) {
 #check that it worked as expected: 
 check<-cbind(keep_prog_df,log_wide)
 
-#I think it did, so now i want to fill down based on session ID
 
 #discard any rows that are not a) within a session or b) immediately preceding one
-fl_log_wide <- log_wide[!(log_wide$event_type == "LogProgramming" & !keep_prog_df$keep_idx), ]
+df <- log_wide[!(log_wide$event_type == "LogProgramming" & !keep_prog_df$keep_idx), ]
 
-#so now the only log programming rows are ones that are explicitly set for a therapy session
+#so now the only log programming rows included are ones that are explicitly set for a therapy session
 
-#fill values forward
-df <-fl_log_wide %>%
+# 4. Combine the df and the amplitude change data: 
+combined<-df %>% bind_rows(amp_tbl) %>% #bind the amp change table to the log data
+  arrange(date_mdy) #rearrange by date
+
+# 5. Add a running phasic amplitude trace (agnostic to roll pauses at first):
+
+# first need to extract the phasic amplitude values from 'log programming change'
+combined %>%
+  rename(phasic_amp_char="phasic_amplitude")->df #rename to make it clear
+
+combined %>% 
+  mutate(phasic_amplitude=str_extract(phasic_amp_char, "\\d+\\.+\\d*")) %>% #extract the numeric part
+  mutate(phasic_amplitude=as.numeric(phasic_amplitude)) ->df #convert to numeric
+
+# need to make a funning phasic amp trace based on log programming changes and log change amp by order rows
+
+# Example data frame
+df <- data.frame(
+  event = c("LogProgrammingChanges", "LogChangeAmpByOrder", "LogProgrammingChanges", "LogChangeAmpByOrder", "LogChangeAmpByOrder"),
+  phasic_amplitude = c(1.0, NA, 1.5, NA, NA),
+  step_change_size = c(NA, 0.05, NA, 0.05, 0.05),
+  step_direction = c(NA, 1, NA, -1, 1),
+  stringsAsFactors = FALSE
+)
+
+# Initialize running amplitude vector
+running_amp <- numeric(nrow(df))
+
+# Initialize current amplitude (assume 0 or set to initial known value)
+current_amp <- 0
+
+# Loop through rows to update running amplitude
+for(i in 1:nrow(df)) {
+  if(df$event[i] == "LogProgrammingChanges") {
+    # Directly set the amplitude
+    current_amp <- df$phasic_amplitude[i]
+  } else if(df$event[i] == "LogChangeAmpByOrder") {
+    # Increment or decrement by step size * direction
+    current_amp <- current_amp + (df$amplitude_step[i] * df$step_direction[i])
+  }
   
-  #fill down whether stim is enabled or not first and the algorithms that are enabled
+  running_amp[i] <- current_amp
+}
+
+# Add the running amplitude as a new column to df
+df$running_phasic_amplitude <- running_amp
+
+print(df)
+
+#check that the phasic amplitude is working:
+df %>% 
+  drop_na(phasic_amplitude) %>%
+  #filter(event_type=="LogChangeAmp") %>%
+  select(date_mdy, phasic_amplitude) %>%
+  ggplot(aes(x=date_mdy, y=phasic_amplitude)) +
+  geom_point() +
+  labs(title="Phasic Amplitude Over Time", x="Time", y="Phasic Amplitude (mA)") +
+  theme_minimal()
+
+#seems reasonable, now I think I expand out to the seconds level:
+df <- df %>%
+  complete(date_mdy = seq(min(date_mdy), max(date_mdy), by = "1 sec"))
+
+#NOW bind with the algo row
+#this will grab the last algo row that happened before the psg ^^; this needs to be stuck onto the df
+df <- df %>%
+  bind_rows(algo_row) %>% #add the last algo row before the psg
+  arrange(date_mdy) #rearrange by date
+
+# add an algo session ID: (need to replace NAs so the algo session ID and therapy session ID doesn't break because cumsum() gets crabby with NAs:)
+df %>%
+  mutate(algo_session_id = cumsum(replace_na(event_type == "LogProgAlgoLL", FALSE))) -> new_df
+
+#need to fill down therapy times a different way to make sure the last previous LogProgramming row is included in the therapy session
+new_df %>%
+  arrange(date_mdy) %>%
+  fill(therapy_session_id, .direction = "down") -> new_df
+
+#select out some of the columns 
+new_df <-new_df %>%
+  select(!c("max_valid_tti_pk_pk","max_valid_tti_pt_pt" ,"min_respiration_period" , "max_respiration_period",
+            "reserved_1","reserved_2","stim_advance","respiration_cycle_count","automatic_stim_count","recovery_burst",                
+            "recovery_burst_wait","recovery_burst_count","intermittent_stim_count")) %>%
+  arrange(date_mdy)
+
+## Now i have every second present in the log data file, and need to fill: 
+# 1. algo values based on algo session, and
+# 2. therapy values based on therapy session
+
+#1. Fill down based on algo session:
+new_df %>%
   group_by(algo_session_id) %>%
   fill(enable_tti_predict_algorithm, enable_xyz_algorithm,
        enable_centered_inhalation, enable_stimulation_output,
        enable_tti_freq_lock_algorithm, .direction = "down") %>%
-  ungroup() %>%
-
-  #fill down the therapy rate, rise time, fall time, tonic amplitude, phasic amplitude
+  ungroup()->new_df
+  
+#2. fill based on therapy session:
+new_df %>%
   group_by(therapy_session_id) %>%
   fill(therapy_rate, rise_time, fall_time, tonic_amplitude,
        phasic_amplitude, onset_ramp_time, ending_ramp_time, pulse_width,
        upright_pause, roll_pause, max_phasic_amplitude, min_phasic_amplitude,
        amplitude_step,roll_pause_mode, .direction = "down") %>%
-  ungroup()
+  ungroup() -> new_df
+
+# ^^^ This presently is not working because the therapy session ID column is ffull of NAs 
+# after the 'complete' command, so i need to actually go back and fill down the therapy session
+# based on what it was assigned as before. importanlyt need to make sure the relevant 
+# last logprog row stays included in the therapy session, so i think it's just a matter of filling down the columns. '
 
 #### Add Roll Pauses ####
 
