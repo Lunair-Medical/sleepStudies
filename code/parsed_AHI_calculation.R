@@ -400,14 +400,16 @@ expanded %>%
 
 # Roll Pause Handling
 roll_pauses <- df %>%
-  filter(event == "LogPositionChange", roll_pause_mode == "Enabled") %>%
+  filter(event == "LogProgramming", roll_pause_mode == "Enabled") %>%
   select(date_mdy, roll_pause) %>%
-  mutate(roll_pause = as.numeric(roll_pause),
-         pause_end = date_mdy + seconds(roll_pause))
+  mutate(roll_pause_numeric = as.numeric(str_extract(roll_pause, "\\d+")),  # Extract numeric part
+         pause_end = date_mdy + dminutes(roll_pause_numeric))  # Convert to minutes
 
+# Initialize roll_pause_active column as FALSE
 filled_df <- filled_df %>%
   mutate(roll_pause_active = FALSE)
 
+# Mark rows within each roll pause window
 for (i in seq_len(nrow(roll_pauses))) {
   filled_df$roll_pause_active <- ifelse(
     filled_df$date_mdy >= roll_pauses$date_mdy[i] &
@@ -417,6 +419,7 @@ for (i in seq_len(nrow(roll_pauses))) {
   )
 }
 
+# Compute stim_active based on stimulation being enabled and roll pause not active
 filled_df <- filled_df %>%
   mutate(
     stim_active = case_when(
@@ -424,3 +427,5 @@ filled_df <- filled_df %>%
       TRUE ~ 0
     )
   )
+
+
