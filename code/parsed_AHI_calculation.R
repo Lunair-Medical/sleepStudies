@@ -25,7 +25,7 @@ library(here)
 #   multi = FALSE,
 #   filters = dlgFilters[c("CSV files", "All files")])$res
 
-eg_fp<-here("data/201-013_60-day_EventGrid_26_Jun-2025.csv")
+eg_fp<-here("data/201-013_60-day_EventGrid_26-Jun-2025.csv")
 #read in the event grid with the scored events 
 event_grid<-read.csv(eg_fp) %>% clean_names()
 
@@ -182,15 +182,16 @@ amp_tbl <- log_df %>%
     step_mA   = as.numeric(str_remove(AmplitudeStep, "\\s*mA$")),
     amp_delta = if_else(tolower(WasIncreased) == "yes",  step_mA, -step_mA)
   ) %>%
-  #select(date, event_type, amp_delta) %>%
-  mutate(date_mdy=mdy_hms(date))  %>%  filter(OrderFromMobileApp != "Yes")  #only keep rows from the mobile app
-
+  select(date, event_type, OrderFromMobileApp, amp_delta) %>%
+  mutate(date_mdy=mdy_hms(date))  %>%  
+  filter(OrderFromMobileApp != "Yes") %>% #only keep rows NOT from the mobile app
   filter(date_mdy >= analysis_start_datetime & date_mdy <= analysis_end_datetime) 
 
-# NOTE: It is possible that at this point there are 0 rows that are included. This would be the case if no changes were made during the PSG using the logchange amp by order buttons
+# NOTE: It is possible that at this point there are 0 rows that are included in amp_tbl. This would be the case if no changes were made during the PSG using the logchange amp by order buttons
 
 
 #2. Parse log data then, need to get the log 'data' column parsed out into different columns:
+
 #separate the data column into independent columns
 id_cols <- setdiff(names(log_df), "data")
 
@@ -222,7 +223,7 @@ algo_row<- log_df[algo_row_idx,] %>% separate_rows(data, sep = " - ") %>% #break
   pivot_wider(names_from = key, values_from = value) %>% #make wide
   clean_names() #clean the new column names
 
-#leave this for now and bind later with the log data 
+#DONT BIND NOW leave this for now and bind later with the log data after complete()
 
 #select down some of the information we want to keep
 log_wide %>%
@@ -236,6 +237,8 @@ log_wide %>%
                      "lead_impedance", "therapy_duration", "therapy_end_cause", "was_increased",
                      "order_from_mobile_app" ,"posture"))->log_wide
 
+# 4. Identify which log programming rows go together with which therapy sessions:
+
 #make a therapy sessions df 
 st_idx<-which(log_wide$event_type=="LogTherapyStart")
 end_idx<-which(log_wide$event_type=="LogTherapyEnd")
@@ -246,10 +249,13 @@ therapy_pairs <- therapy_pairs %>% mutate(row_id=row_number()) #add a session id
  
 #create session ids
 log_wide <- log_wide %>%
-  mutate(therapy_session_id = cumsum(event_type == "LogTherapyStart"))
+  arrange(date_mdy) #%>% commenting out therapy_session_id for now so i can assign it later inside the loop:
+  # mutate(therapy_session_id = cumsum(event_type == "LogTherapyStart"))
 
 #set up empty array to store which log programming rows are relevant: 
 keep_prog_df <- data.frame(keep_idx=logical(nrow(log_wide)))
+#initialize therapy session ID column:
+#log_wide$therapy_session_id <- NA 
 
 #figure out which log programming rows go with which therapy session ID
 for (i in 1:nrow(therapy_pairs)) {
@@ -260,7 +266,7 @@ for (i in 1:nrow(therapy_pairs)) {
   
   # a) programming rows inside [start, end] should be kept:
   inside <- which(log_wide$event_type == "LogProgramming" &
-                    log_wide$dae_mdy >= st & log_wide$date_mdy <= en)
+                    log_wide$date_mdy >= st & log_wide$date_mdy <= en)
   keep_prog_df$keep_idx[inside] <- TRUE
   
   # b) programming row immediately preceding start should be kept:
@@ -268,9 +274,10 @@ for (i in 1:nrow(therapy_pairs)) {
                           log_wide$date_mdy < st))
   if (length(prev_idx) && prev_idx > 0) keep_prog_df$keep_idx[prev_idx] <- TRUE
   
-  # c) indicate which therapy session it belongs to
-  log_wide$therapy_session_id[inside] <- therapy_pairs$row_id[i]
-  log_wide$therapy_session_id[prev_idx] <- therapy_pairs$row_id[i]
+  #dropping this for now, will ID therapy sessions later once the PA trace is in, because I don't need to fill down based on a therapy session, I'm doing it later using cumsum + log change amp by order rows 
+  # # c) indicate which therapy session it belongs to
+  # log_wide$therapy_session_id[inside] <- therapy_pairs$row_id[i]
+  # log_wide$therapy_session_id[prev_idx] <- therapy_pairs$row_id[i]
 }
 
 #check that it worked as expected: 
@@ -282,106 +289,99 @@ df <- log_wide[!(log_wide$event_type == "LogProgramming" & !keep_prog_df$keep_id
 
 #so now the only log programming rows included are ones that are explicitly set for a therapy session
 
-# 4. Combine the df and the amplitude change data: 
-combined<-df %>% bind_rows(amp_tbl) %>% #bind the amp change table to the log data
+# 5. Combine the df and the amplitude change data: 
+combined<-df %>% 
+  bind_rows(amp_tbl) %>% #bind the amp change table to the log data
   arrange(date_mdy) #rearrange by date
 
-# 5. Add a running phasic amplitude trace (agnostic to roll pauses at first):
+# 6. Add a running phasic amplitude trace (agnostic to roll pauses at first):
 
 # first need to extract the phasic amplitude values from 'log programming change'
 combined %>%
-  rename(phasic_amp_char="phasic_amplitude")->df #rename to make it clear
+  rename(phasic_amp_char="phasic_amplitude") %>%
+  replace_na(list(amp_delta=0)) -> new_df #replace NAs in amp_delta with 0, so that if there's no change by order rows it doesn't break the code below
 
-combined %>% 
-  mutate(phasic_amplitude=str_extract(phasic_amp_char, "\\d+\\.+\\d*")) %>% #extract the numeric part
-  mutate(phasic_amplitude=as.numeric(phasic_amplitude)) ->df #convert to numeric
+#grab just the numeric part of the phasic amplitude column:
+new_df %>% 
+  mutate(phasic_amplitude=str_extract(phasic_amp_char, "\\d+\\.+\\d*")) %>% 
+  mutate(phasic_amplitude=as.numeric(phasic_amplitude)) ->new_df 
 
-# need to make a funning phasic amp trace based on log programming changes and log change amp by order rows
+# This gives me the programmed rows, need to account for log change by order rows (which may be 0, depending on the study, but i still need to account for them):
 
 # Initialize running amplitude vector
-running_amp <- numeric(nrow(df))
+running_amp <- numeric(nrow(new_df))
 
 # Initialize current amplitude (assume 0 or set to initial known value)
 current_amp <- 0
 
 # Loop through rows to update running amplitude
-for(i in 1:nrow(df)) {
-  if(df$event[i] == "LogProgrammingChanges") {
+for(i in 1:nrow(new_df)) {
+  if(new_df$event[i] == "LogProgramming") {
     # Directly set the amplitude
-    current_amp <- df$phasic_amplitude[i]
-  } else if(df$event[i] == "LogChangeAmpByOrder") {
+    current_amp <- new_df$phasic_amplitude[i]
+  } else if(new_df$event[i] == "LogChangeAmpByOrder") {
     # Increment or decrement by step size * direction
-    current_amp <- current_amp + (df$amplitude_step[i] * df$step_direction[i])
+    current_amp <- current_amp + new_df$amp_delta
   }
   
   running_amp[i] <- current_amp
 }
 
 # Add the running amplitude as a new column to df
-df$running_phasic_amplitude <- running_amp
+new_df$running_phasic_amplitude <- running_amp
 
-print(df)
+#take a look to see that it's working as expected: 
 
+check<-new_df %>% select (c("date_mdy", "event", "event_type", "phasic_amplitude", "running_phasic_amplitude"))
 #check that the phasic amplitude is working:
-df %>% 
-  drop_na(phasic_amplitude) %>%
-  #filter(event_type=="LogChangeAmp") %>%
-  select(date_mdy, phasic_amplitude) %>%
-  ggplot(aes(x=date_mdy, y=phasic_amplitude)) +
+check %>%  drop_na(running_phasic_amplitude) %>%
+  select(date_mdy, running_phasic_amplitude) %>%
+  ggplot(aes(x=date_mdy, y=running_phasic_amplitude)) +
   geom_point() +
   labs(title="Phasic Amplitude Over Time", x="Time", y="Phasic Amplitude (mA)") +
   theme_minimal()
 
-#seems reasonable, now I think I expand out to the seconds level:
-df <- df %>%
+#seems reasonable, now I think I expand out to the seconds level to make "continuous" data:
+
+# 7. Expand data and fill down based on therapy and algo session:
+expanded <- new_df %>%
   complete(date_mdy = seq(min(date_mdy), max(date_mdy), by = "1 sec"))
 
-#NOW bind with the algo row
-#this will grab the last algo row that happened before the psg ^^; this needs to be stuck onto the df
-df <- df %>%
+#NOW bind with the algo row (don't want to do it before and unnecessarily add extra rows, since the last log algo ll might not be immediately prior to the start of the study)
+expanded <- expanded %>%
   bind_rows(algo_row) %>% #add the last algo row before the psg
   arrange(date_mdy) #rearrange by date
 
-# add an algo session ID: (need to replace NAs so the algo session ID and therapy session ID doesn't break because cumsum() gets crabby with NAs:)
-df %>%
-  mutate(algo_session_id = cumsum(replace_na(event_type == "LogProgAlgoLL", FALSE))) -> new_df
+# # add an algo session ID: (need to replace NAs so the algo session ID and therapy session ID doesn't break because cumsum() gets crabby with NAs:)
+# expanded %>%
+#   mutate(algo_session_id = cumsum(replace_na(event_type == "LogProgAlgoLL", FALSE))) -> expanded
 
 #need to fill down therapy times a different way to make sure the last previous LogProgramming row is included in the therapy session
-new_df %>%
+expanded %>%
   arrange(date_mdy) %>%
-  fill(therapy_session_id, .direction = "down") -> new_df
+  
+  #fill all the columns that get set inside a LogProgramming row (NOT including the phasic amplitude values that come from this since they get updated by logchangeorder)
+  fill(phasic_time, therapy_rate, rise_time, fall_time, tonic_amplitude,
+       onset_ramp_time, ending_ramp_time, pulse_width, roll_pause, roll_pause_mode,
+       max_phasic_amplitude, min_phasic_amplitude, .direction = "down") %>%
+  
+  #fill in the NAs that were introduced to the running phasic amplitude  when we did complete()
+  fill(running_phasic_amplitude) %>% 
+  
+  
+  #fill in most things that gets set inside a LogProgAlgoLL row: (not all cuz there's a ton)
+  fill(device_mode, magnet_mode, roll_pause_mode, enable_tti_predict_algorithm,
+       enable_xyz_algorithm, enable_centered_inhalation, enable_stimulation_output,
+       enable_tti_freq_lock_algorithm, tti_averaging_filter,tti_peak_detect,
+       min_valid_tti_pk_pk,max_valid_tti_pk_pk,
+       max_valid_tti_pt_pt, max_valid_tti_pt_pt, .direction = "down") %>%
+  
+  #fill in the posture
+  fill(posture,.direction = "down") -> filled_df
 
-#select out some of the columns 
-new_df <-new_df %>%
-  select(!c("max_valid_tti_pk_pk","max_valid_tti_pt_pt" ,"min_respiration_period" , "max_respiration_period",
-            "reserved_1","reserved_2","stim_advance","respiration_cycle_count","automatic_stim_count","recovery_burst",                
-            "recovery_burst_wait","recovery_burst_count","intermittent_stim_count")) %>%
-  arrange(date_mdy)
 
-## Now i have every second present in the log data file, and need to fill: 
-# 1. algo values based on algo session, and
-# 2. therapy values based on therapy session
 
 ### FOR CAMDEN: This is about where I think things go off the rails. ###
-
-#1. Fill down based on algo session:
-new_df %>%
-  group_by(algo_session_id) %>%
-  fill(enable_tti_predict_algorithm, enable_xyz_algorithm,
-       enable_centered_inhalation, enable_stimulation_output,
-       enable_tti_freq_lock_algorithm, .direction = "down") %>%
-  ungroup()->new_df
-  
-#2. fill based on therapy session:
-new_df %>%
-  group_by(therapy_session_id) %>%
-  fill(therapy_rate, rise_time, fall_time, tonic_amplitude,
-       phasic_amplitude, onset_ramp_time, ending_ramp_time, pulse_width,
-       upright_pause, roll_pause, max_phasic_amplitude, min_phasic_amplitude,
-       amplitude_step,roll_pause_mode, .direction = "down") %>%
-  ungroup() -> new_df
-
-#### Add Roll Pauses ####
 
 ## Have to account for the roll pause that occurs after each log position change that is the length of roll_pause and is only enabled some of the time
 rp<-df %>%
