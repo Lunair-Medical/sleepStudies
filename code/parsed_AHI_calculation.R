@@ -50,20 +50,21 @@ start_time <- clean_events %>%
   pull(start_time) %>%
   first()
 
-if (length(start_time)!=1) {
+# Camden 7/17: Updated the if-statement logic for start and end time to fix error where the script wasn't prompting the user for an end time, causing missing-value problems down the line.
+if (is.na(start_time) | length(start_time) != 1) {
   stop("Analysis Start time not found in the event grid. Please provide a start time")
   st<-dlg_input(message="Please provide an analysis start time.")$res
-  start_time <- as_hms(st) #convert to hms
+  start_time <- as_hms(st)
 }
 
 end_time <- clean_events %>%
   filter(event == "Analysis End") %>%
   pull(end_time) %>%
   first()
-if (length(end_time)!=1) {
+if (is.na(end_time) | length(end_time) != 1) {
   message("Analysis End time not found in the event grid. Please provide an end time")
   en<-dlg_input(message="Please provide an analysis end time.")$res
-  end_time <- as_hms(en) #convert to hms
+  end_time <- as_hms(en)
 }
 
 
@@ -74,7 +75,7 @@ if (!"date" %in% names(clean_events)) {
   st_dt <- dlg_input(message="Please provide a start date (YYYY-MM-DD):")$res
   start_date<-as.Date(st_dt) #convert to Date
   end_date<-start_date + days(1) #assume the same date for now
-
+  
   clean_events <- clean_events %>%
     mutate(
       date = if_else(as.numeric(start_time) < 12*60*60, end_date, start_date))  #events before noon automatically assigned to next day 
@@ -82,9 +83,9 @@ if (!"date" %in% names(clean_events)) {
 
 #if date already exists as a column, just ensure it's in the right format and concatenate:
 clean_events <- clean_events %>% mutate(
-    start_datetime = as.POSIXct(date) + as.numeric(start_time),
-    end_datetime = as.POSIXct(date) + as.numeric(end_time)
-  )
+  start_datetime = as.POSIXct(date) + as.numeric(start_time),
+  end_datetime = as.POSIXct(date) + as.numeric(end_time)
+)
 
 #put them together into a datetime: 
 analysis_start_datetime<- as.POSIXct(start_date) + as.numeric(start_time)
@@ -208,10 +209,10 @@ log_wide <- log_df %>%
 #filter data based on the analysis start and end:
 log_wide <- log_wide %>%
   filter(date_mdy >= analysis_start_datetime & date_mdy <= analysis_end_datetime)
-  
+
 #3. Find and parse the last LogProgAlgoLL row before the analysis start time:
 algo_row_idx<-last(which(log_df$event_type=="LogProgAlgoLL" & 
-                log_df$date_mdy < analysis_start_datetime))
+                           log_df$date_mdy < analysis_start_datetime))
 
 #split out the algo row into separate columns:
 algo_row<- log_df[algo_row_idx,] %>% separate_rows(data, sep = " - ") %>% #breaks into rows
@@ -228,14 +229,14 @@ algo_row<- log_df[algo_row_idx,] %>% separate_rows(data, sep = " - ") %>% #break
 #select down some of the information we want to keep
 log_wide %>%
   select(c("date_mdy","event","event_type","device_mode","magnet_mode", "roll_pause_mode",
-                     "phasic_time" ,"therapy_rate","rise_time","fall_time","tonic_amplitude",
-                     "phasic_amplitude","onset_ramp_time","ending_ramp_time","pulse_width",
-                     "upright_pause","roll_pause" ,"max_phasic_amplitude","min_phasic_amplitude",
-                     "amplitude_step","enable_tti_predict_algorithm" ,  "enable_xyz_algorithm",          
-                     "enable_centered_inhalation",     "enable_stimulation_output",     
-                     "enable_tti_freq_lock_algorithm", "battery_level",                 
-                     "lead_impedance", "therapy_duration", "therapy_end_cause", "was_increased",
-                     "order_from_mobile_app" ,"posture"))->log_wide
+           "phasic_time" ,"therapy_rate","rise_time","fall_time","tonic_amplitude",
+           "phasic_amplitude","onset_ramp_time","ending_ramp_time","pulse_width",
+           "upright_pause","roll_pause" ,"max_phasic_amplitude","min_phasic_amplitude",
+           "amplitude_step","enable_tti_predict_algorithm" ,  "enable_xyz_algorithm",          
+           "enable_centered_inhalation",     "enable_stimulation_output",     
+           "enable_tti_freq_lock_algorithm", "battery_level",                 
+           "lead_impedance", "therapy_duration", "therapy_end_cause", "was_increased",
+           "order_from_mobile_app" ,"posture"))->log_wide
 
 # 4. Identify which log programming rows go together with which therapy sessions:
 
@@ -246,11 +247,11 @@ st_end_idx<-c(st_idx,end_idx)
 therapy_pairs<-data.frame(start_times=log_wide$date_mdy[st_idx], #start times from LogTherapyStart rows
                           end_times=log_wide$date_mdy[end_idx]) #end times from LogTherapyEnd rows 
 therapy_pairs <- therapy_pairs %>% mutate(row_id=row_number()) #add a session id
- 
+
 #create session ids
 log_wide <- log_wide %>%
   arrange(date_mdy) #%>% commenting out therapy_session_id for now so i can assign it later inside the loop:
-  # mutate(therapy_session_id = cumsum(event_type == "LogTherapyStart"))
+# mutate(therapy_session_id = cumsum(event_type == "LogTherapyStart"))
 
 #set up empty array to store which log programming rows are relevant: 
 keep_prog_df <- data.frame(keep_idx=logical(nrow(log_wide)))
@@ -332,10 +333,10 @@ new_df$running_phasic_amplitude <- running_amp
 
 #take a look to see that it's working as expected: 
 
-check<-new_df %>% select (c("date_mdy", "event", "event_type", "phasic_amplitude", "running_phasic_amplitude"))
+check <- new_df %>% select(date_mdy, event, event_type, phasic_amplitude, running_phasic_amplitude)
 #check that the phasic amplitude is working:
-check %>%  drop_na(running_phasic_amplitude) %>%
-  select(date_mdy, running_phasic_amplitude) %>%
+check %>%
+  drop_na(running_phasic_amplitude) %>%
   ggplot(aes(x=date_mdy, y=running_phasic_amplitude)) +
   geom_point() +
   labs(title="Phasic Amplitude Over Time", x="Time", y="Phasic Amplitude (mA)") +
@@ -344,17 +345,29 @@ check %>%  drop_na(running_phasic_amplitude) %>%
 #seems reasonable, now I think I expand out to the seconds level to make "continuous" data:
 
 # 7. Expand data and fill down based on therapy and algo session:
-expanded <- new_df %>%
-  complete(date_mdy = seq(min(date_mdy), max(date_mdy), by = "1 sec"))
+
 
 #NOW bind with the algo row (don't want to do it before and unnecessarily add extra rows, since the last log algo ll might not be immediately prior to the start of the study)
-expanded <- expanded %>%
-  bind_rows(algo_row) %>% #add the last algo row before the psg
-  arrange(date_mdy) #rearrange by date
+# Camden 7/17: Added safeguard against NA values
+if (nrow(new_df %>% filter(!is.na(date_mdy))) > 0) {
+  expanded <- new_df %>%
+    filter(!is.na(date_mdy)) %>%
+    complete(date_mdy = seq(min(date_mdy), max(date_mdy), by = "1 sec"))
+} else {
+  stop("No valid timestamps in new_df; cannot expand time series.")
+}
+
+if (nrow(algo_row) > 0) {
+  expanded <- expanded %>%
+    bind_rows(algo_row) %>%
+    arrange(date_mdy)
+}
 
 # # add an algo session ID: (need to replace NAs so the algo session ID and therapy session ID doesn't break because cumsum() gets crabby with NAs:)
 # expanded %>%
 #   mutate(algo_session_id = cumsum(replace_na(event_type == "LogProgAlgoLL", FALSE))) -> expanded
+
+## Camden 7/17: Updated the chaining style. Functionality shouyld be identical.
 
 #need to fill down therapy times a different way to make sure the last previous LogProgramming row is included in the therapy session
 expanded %>%
@@ -365,38 +378,49 @@ expanded %>%
        onset_ramp_time, ending_ramp_time, pulse_width, roll_pause, roll_pause_mode,
        max_phasic_amplitude, min_phasic_amplitude, .direction = "down") %>%
   
-  #fill in the NAs that were introduced to the running phasic amplitude  when we did complete()
-  fill(running_phasic_amplitude) %>% 
+  #fill in the NAs that were introduced to the running phasic amplitude when we did complete()
+  fill(running_phasic_amplitude, .direction = "down") %>%
   
-  
-  #fill in most things that gets set inside a LogProgAlgoLL row: (not all cuz there's a ton)
+  #fill in most things that get set inside a LogProgAlgoLL row (not all because there's a ton)
   fill(device_mode, magnet_mode, roll_pause_mode, enable_tti_predict_algorithm,
        enable_xyz_algorithm, enable_centered_inhalation, enable_stimulation_output,
-       enable_tti_freq_lock_algorithm, tti_averaging_filter,tti_peak_detect,
-       min_valid_tti_pk_pk,max_valid_tti_pk_pk,
-       max_valid_tti_pt_pt, max_valid_tti_pt_pt, .direction = "down") %>%
+       enable_tti_freq_lock_algorithm, tti_averaging_filter, tti_peak_detect,
+       min_valid_tti_pk_pk, max_valid_tti_pk_pk, max_valid_tti_pt_pt,
+       .direction = "down") %>%
   
   #fill in the posture
-  fill(posture,.direction = "down") -> filled_df
-
+  fill(posture, .direction = "down") -> filled_df
 
 
 ### FOR CAMDEN: This is about where I think things go off the rails. ###
 
 ## Have to account for the roll pause that occurs after each log position change that is the length of roll_pause and is only enabled some of the time
-rp<-df %>%
-  filter(event=="LogPositionChange", roll_pause_mode=="Enabled") %>%
-  arrange(date)
 
-rp_starts<-c()
-rp_ends<-c()
+## Camden 7/17:
 
-current_pause_end <- as.POSIXct(NA)
-pause_duration<-0
+# Roll Pause Handling
+roll_pauses <- df %>%
+  filter(event == "LogPositionChange", roll_pause_mode == "Enabled") %>%
+  select(date_mdy, roll_pause) %>%
+  mutate(roll_pause = as.numeric(roll_pause),
+         pause_end = date_mdy + seconds(roll_pause))
 
-for (i in 1:length(nrow(df)){
-  roll_time
+filled_df <- filled_df %>%
+  mutate(roll_pause_active = FALSE)
+
+for (i in seq_len(nrow(roll_pauses))) {
+  filled_df$roll_pause_active <- ifelse(
+    filled_df$date_mdy >= roll_pauses$date_mdy[i] &
+      filled_df$date_mdy <= roll_pauses$pause_end[i],
+    TRUE,
+    filled_df$roll_pause_active
+  )
 }
-#ok so now I want to identify if therapy is enabled and being delivered 
-df %>% 
-  mutate(therapy_enabled= case_when(enable_stimulation_output==1 &=TRUE)
+
+filled_df <- filled_df %>%
+  mutate(
+    stim_active = case_when(
+      enable_stimulation_output == 1 & !roll_pause_active ~ running_phasic_amplitude,
+      TRUE ~ 0
+    )
+  )
