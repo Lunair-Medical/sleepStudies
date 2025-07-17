@@ -14,6 +14,7 @@ library(officer)          # save_as_docx(), if you want a Word file
 library(svDialogs)        # for file picker
 library(lubridate)        # ymd_hms()
 library(here)
+library(data.table)      # for data.table operations
 
 ##### 1. Event Grid Data #####################
 
@@ -51,7 +52,7 @@ start_time <- clean_events %>%
   first()
 
 # Camden 7/17: Updated the if-statement logic for start and end time to fix error where the script wasn't prompting the user for an end time, causing missing-value problems down the line.
-if (is.na(start_time) | length(start_time) != 1) {
+if (length(start_time) != 1) {
   stop("Analysis Start time not found in the event grid. Please provide a start time")
   st<-dlg_input(message="Please provide an analysis start time.")$res
   start_time <- as_hms(st)
@@ -61,7 +62,7 @@ end_time <- clean_events %>%
   filter(event == "Analysis End") %>%
   pull(end_time) %>%
   first()
-if (is.na(end_time) | length(end_time) != 1) {
+if (length(end_time) != 1) {
   message("Analysis End time not found in the event grid. Please provide an end time")
   en<-dlg_input(message="Please provide an analysis end time.")$res
   end_time <- as_hms(en)
@@ -346,9 +347,7 @@ check %>%
 
 # 7. Expand data and fill down based on therapy and algo session:
 
-
-#NOW bind with the algo row (don't want to do it before and unnecessarily add extra rows, since the last log algo ll might not be immediately prior to the start of the study)
-# Camden 7/17: Added safeguard against NA values
+#expand to get seconds level data
 if (nrow(new_df %>% filter(!is.na(date_mdy))) > 0) {
   expanded <- new_df %>%
     filter(!is.na(date_mdy)) %>%
@@ -363,11 +362,6 @@ if (nrow(algo_row) > 0) {
     arrange(date_mdy)
 }
 
-# # add an algo session ID: (need to replace NAs so the algo session ID and therapy session ID doesn't break because cumsum() gets crabby with NAs:)
-# expanded %>%
-#   mutate(algo_session_id = cumsum(replace_na(event_type == "LogProgAlgoLL", FALSE))) -> expanded
-
-## Camden 7/17: Updated the chaining style. Functionality shouyld be identical.
 
 #need to fill down therapy times a different way to make sure the last previous LogProgramming row is included in the therapy session
 expanded %>%
@@ -391,16 +385,22 @@ expanded %>%
   #fill in the posture
   fill(posture, .direction = "down") -> filled_df
 
-
-### FOR CAMDEN: This is about where I think things go off the rails. ###
+#take a look at the filled_df which should show continuous phasic amplitude data
+filled_df %>%
+  filter(date_mdy>=analysis_start_datetime) %>% #this will drop the algo row and other things before the PSG
+  ggplot(aes(x=date_mdy, y=running_phasic_amplitude)) +
+  geom_point() +
+  labs(title="Phasic Amplitude Over Time", x="Time", y="Phasic Amplitude (mA)") +
+  theme_minimal()
 
 ## Have to account for the roll pause that occurs after each log position change that is the length of roll_pause and is only enabled some of the time
 
 ## Camden 7/17:
 
+# 8. Implement roll pauses and other logic columns 
 # Roll Pause Handling
-roll_pauses <- df %>%
-  filter(event == "LogProgramming", roll_pause_mode == "Enabled") %>%
+roll_pauses <- filled_df %>%
+  filter(event_type == "LogPositionChange", roll_pause_mode == "Enabled") %>%
   select(date_mdy, roll_pause) %>%
   mutate(roll_pause_numeric = as.numeric(str_extract(roll_pause, "\\d+")),  # Extract numeric part
          pause_end = date_mdy + dminutes(roll_pause_numeric))  # Convert to minutes
@@ -412,20 +412,193 @@ filled_df <- filled_df %>%
 # Mark rows within each roll pause window
 for (i in seq_len(nrow(roll_pauses))) {
   filled_df$roll_pause_active <- ifelse(
-    filled_df$date_mdy >= roll_pauses$date_mdy[i] &
-      filled_df$date_mdy <= roll_pauses$pause_end[i],
+    filled_df$date_mdy >= roll_pauses$date_mdy[i] & filled_df$date_mdy <= roll_pauses$pause_end[i],
     TRUE,
     filled_df$roll_pause_active
   )
 }
 
-# Compute stim_active based on stimulation being enabled and roll pause not active
+#Initialize therapy column:
+filled_df <- filled_df %>%
+  mutate(during_therapy_session = FALSE)
+
+#Mark rows within a therapy session
+for (i in seq_len(nrow(therapy_pairs))){
+  filled_df$during_therapy_session <- ifelse(
+    filled_df$date_mdy >= therapy_pairs$start_times[i] & 
+    filled_df$date_mdy <= therapy_pairs$end_times[i],
+    TRUE,
+    filled_df$during_therapy_session
+  )
+}
+
+#first make an algo column:
 filled_df <- filled_df %>%
   mutate(
-    stim_active = case_when(
-      enable_stimulation_output == 1 & !roll_pause_active ~ running_phasic_amplitude,
+  any_algorithm_enabled = ifelse(
+    enable_tti_predict_algorithm == 1 | enable_xyz_algorithm == 1 | 
+      enable_centered_inhalation == 1 | enable_tti_freq_lock_algorithm == 1, TRUE, FALSE))
+
+# Compute stim_active based on stimulation being enabled and roll pause not active
+#NOTE!! IF all algorithms are turned off, enable_stim_output does NOT have to be on/1...no algorithms-->stim is enabled even if device says 0!!
+
+filled_df <- filled_df %>%
+  
+  
+    # two ways for stim to be active (MUST be in a therapy session) 
+    mutate(stim_active = case_when(
+      
+      #1 - if an algorithm is enabled, stimulation is enabled, and roll pause is not active:
+      during_therapy_session & any_algorithm_enabled & enable_stimulation_output == 1 & !roll_pause_active ~ running_phasic_amplitude ,
+      
+      #2 - if no algorithms are enabled, DOESN'T MATTER what enable_stim is doing, and roll pause is not active:
+      during_therapy_session & !any_algorithm_enabled  & !roll_pause_active ~ running_phasic_amplitude,
+      
+      #otherwise, should be set to 0
       TRUE ~ 0
     )
   )
 
+filled_df %>% 
+  filter(date_mdy >= analysis_start_datetime) %>% #this will drop the algo row and other things before the PSG
+  ggplot(aes(x=date_mdy, y=stim_active)) +
+  geom_line()
 
+# 9. Identify therapy enabled periods based on user input:
+
+#add a therapy enabled column based on when the efficacy portion of the night started. Manual for now, but may add something later:
+te_start_char<- dlg_input(message="Please provide a therapy enabled start time (HH:MM:SS):")$res
+te_end_char<- dlg_input(message="Please provide a therapy enabled end time (YYYY-MM-DD HH:MM:SS):")$res
+
+te_start_time <-as.ITime(te_start_char) #convert to ITime
+te_end_time <-as.ITime(te_end_char) #convert to ITime
+
+therapy_enabled_start_date<-dplyr::if_else(te_start_time<=as.ITime("11:59:00"),end_date, start_date) #if before noon, assume next day
+therapy_enabled_start_datetime <- as.POSIXct(therapy_enabled_start_date) + as.numeric(te_start_time) #combine date and time
+
+#if no end time is provided just assume end of analysis is end of therapy:
+if(length(te_end_time) == 0) {
+  therapy_enabled_end_date <- analysis_end_datetime # if no end time provided, assume same as end of analysis
+} else {
+  therapy_enabled_end_date<-dplyr::if_else(te_end_time<=as.ITime("11:59:00"),end_date, start_date) #if before noon, assume next day
+  therapy_enabled_end_datetime <- as.POSIXct(therapy_enabled_end_date) + as.numeric(te_end_time) #combine date and time
+}
+
+# 10. Add therapy enabled column to filled_df:
+filled_df <- filled_df %>%
+  mutate(therapy_enabled = ifelse(
+    date_mdy >= therapy_enabled_start_datetime & date_mdy <= therapy_enabled_end_datetime,
+    TRUE, FALSE
+  ))
+
+####
+# 11. Prepare device log data (analogous to waveform data) 
+####
+
+## filter out rows in filled_df that came from wake time: 
+filled_dt<-as.data.table(filled_df)
+for (i in 1:nrow(wake_epochs)){
+  start_time <- wake_epochs$start_datetime[i]
+  end_time <- wake_epochs$end_datetime[i]
+  
+  # Find the rows in all_data_dt that fall within the start and end times
+  filled_dt[date_mdy >= start_time & date_mdy <= end_time, sleep_stage := "wake"]
+}
+
+filled_dt[is.na(sleep_stage), sleep_stage := "sleep"] #set all other rows to asleep
+
+#add a duration column so I can sum and get time by strata:
+# Calculate time difference to next timestamp (in seconds)
+filled_dt[, duration := as.numeric(shift(date_mdy, type = "lead") - date_mdy, units = "secs")]
+
+# The last row will have NA for duration; you may want to set it to 0 or remove it before summing
+filled_dt[is.na(duration), duration := 0]
+
+#examine 
+filled_dt %>% 
+  group_by(sleep_stage) %>% 
+  summarize(total_time_hr = sum(duration)/3600) #total time in each sleep stage
+
+# filter out the wake data:
+sleeping <- filled_dt %>%
+  filter(sleep_stage == "sleep") #keep only sleep data
+
+
+# Summarize by different conditions durations by stratum
+te_strata <- sleeping[, .(total_time_secs = sum(duration), total_time_hr=sum(duration)/3600), by = therapy_enabled]
+
+####
+# 12. Match events to the device/waveform data
+####
+
+events_dt <- as.data.table(filter(all_events,event!="Desat")) #filter out desats for AHI calculation, already has 'wake' removed
+
+#add empty columns to store summary values for the stimulation during that event and what stratum you're in when the event starts: 
+sum_cols<-c("mean_stim","max_stim","min_stim","therapy_enabled","stim_cat","stim_val")
+events_dt[, (sum_cols) := NA_real_]
+
+#loop over the events dt and calculate summary values for each:
+for (i in 1:nrow(events_dt)){
+  
+  start_time <- events_dt$start_datetime[i]
+  end_time <- events_dt$end_datetime[i]
+  
+  # Find the rows in all_data_dt that fall within the start and end times
+  relevant_rows <- sleeping[date_mdy >= start_time & date_mdy <= end_time]
+  
+  #for the events that are outside the analysis window, keep those as NA:
+  if (nrow(relevant_rows) == 0) {
+    events_dt[i, sum_cols] <- NA
+    next #skip to the next iteration if no relevant rows found
+    
+  } else {
+    
+    #calculate summary stats for each event:
+    mean(relevant_rows$stim_active, na.rm = TRUE) -> events_dt$mean_stim[i]
+    min(relevant_rows$stim_active, na.rm = TRUE) -> events_dt$min_stim[i]
+    max(relevant_rows$stim_active, na.rm = TRUE) -> events_dt$max_stim[i]
+
+    #what was the status of stimulation when the event was starting?
+    
+    first(relevant_rows$therapy_enabled) -> events_dt$therapy_enabled[i]#status of therapy enabled flag
+    events_dt$stim_cat[i] <- if_else(first(relevant_rows$stim_active)> 0, T,F) #stim flag status
+    events_dt$stim_val[i] <- (first(relevant_rows$stim_active)) #stim amp value 
+  }
+}
+
+#several rows at the end of events_dt are NA because therapy sessions stopped before end of the study (and therefore aren't in 'sleeping' bc it's filtered to the device rows i kept):
+#so replace those NAs: 
+events_dt %>%
+  mutate(across(c("mean_stim","min_stim","max_stim","stim_val","stim_cat","therapy_enabled"), ~ replace_na(., 0))) -> events_dt #replace NAs with 0 for stim cols
+
+#summarize by stim strata:
+events_dt %>%
+  group_by(stim_cat) %>%
+  summarize(n_events = n()) -> events_by_stim_strata
+events_by_stim_strata
+
+#summarize by therapy enabled strata:
+events_dt %>%
+  group_by(therapy_enabled) %>%
+  summarize(n_events = n()) -> events_by_therapy_strata
+events_by_therapy_strata
+
+#calculate time spent in each: 
+te_strata_time <- sleeping %>%
+  group_by(therapy_enabled) %>%
+  summarize(total_time_secs = sum(duration), total_time_hr = sum(duration)/3600) #total time in each therapy enabled stratum
+#summarize by sleep stage:
+events_dt %>% 
+  group_by(sleep) %>% 
+  summarize(n_events=n())
+
+#calculate an AHI by strata
+AHI_by_strata <- merge(
+  x= events_by_strata,
+  y=strata_time,by.x="strat_at_start",by.y = "stratum")
+
+AHI_by_strata %>%
+  mutate(AHI=round(n_events/total_time_hr,1)) -> AHI_by_strata
+
+
+#depth and length of apneas etc.
