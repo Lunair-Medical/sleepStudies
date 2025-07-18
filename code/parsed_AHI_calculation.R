@@ -16,6 +16,9 @@ library(lubridate)        # ymd_hms()
 library(here)
 library(data.table)      # for data.table operations
 
+lunair_palette=c(
+  "#6bdbdb","#143464", "#697e9c", "#ccd9e2","#7CCDF5", "#397b96","#833080")
+
 ##### 1. Event Grid Data #####################
 
 ## read in event data in the form of a (scored) event grid out of Nox (make sure it's one with a 'sleep' column)
@@ -462,7 +465,22 @@ filled_df <- filled_df %>%
 filled_df %>% 
   filter(date_mdy >= analysis_start_datetime) %>% #this will drop the algo row and other things before the PSG
   ggplot(aes(x=date_mdy, y=stim_active)) +
-  geom_line()
+  geom_line()+theme_minimal()
+
+#pivot longer and plot:
+filled_df %>%
+  filter(date_mdy >= analysis_start_datetime) %>% #this will drop the algo row and other things before the PSG
+  select(date_mdy, stim_active, running_phasic_amplitude) %>%
+  pivot_longer(cols = c(stim_active, running_phasic_amplitude), names_to = "variable", values_to = "value") %>%
+  ggplot(aes(x=date_mdy, y=value, color=variable)) +
+  geom_line(show.legend = F) +
+  theme_minimal()+
+  facet_wrap(~ variable, scales = "free_y",ncol=1) +
+  labs(x="Time", y="Amplitude (mA)") +
+  theme(axis.text = element_text(size = 24),
+        axis.title = element_text(size=32),
+        legend.position = "none")
+
 ####
 # 9. Identify therapy enabled periods based on user input:
 ####
@@ -620,6 +638,7 @@ AHI_by_te <- merge(
 AHI_by_te<- AHI_by_te %>%
   mutate(AHI=round(n_events/total_time_hr,1)) #calculate AHI in events per hour
 AHI_by_te
+AHI_te<-AHI_by_te %>% filter(therapy_enabled) %>% pull(AHI)
 
 #how are we doing during stimulation during therapy time? 
 
@@ -631,7 +650,35 @@ AHI_by_stim <- merge(
 AHI_by_stim %>%
   mutate(AHI=round(n_events/total_time_hr,1)) -> AHI_by_stim
 AHI_by_stim
+AHI_stim<-AHI_by_stim %>% filter(stim_during_te) %>% pull(AHI)
+
+#All the AHI values:
 AHI_whole_night
+AHI_te
+AHI_stim
+
+#put them together into a summary table:
+AHI_summary <- data.frame(
+  Status = c("Whole Night", "Therapy-Enabled", "Stimulating"),
+  AHI = c(AHI_whole_night$AHI, AHI_te, AHI_stim)
+)
+AHI_summary %>% ggtexttable(rows= NULL,
+            #  align="lll",
+            theme = ttheme("blank",
+                           tbody.style = tbody_style(color=lunair_palette[3],
+                                                     fill = "white",
+                                                     hjust = as.vector(matrix(c(rep(0,8)), ncol = 2, nrow = 4, byrow = TRUE)),
+                                                     x=0.1),
+                           colnames.style = colnames_style(color=lunair_palette[2],
+                                                           fill = "white",
+                                                           size = 14,
+                                                           face = "bold"))) ->pretty.table
+pretty.table <- set_table_properties(pretty.table, layout = "fixed", width = 1)  # width = 1 means 100%
+
+pretty.table
+
+grid::grid.newpage()
+grid::grid.draw(pretty.table)
 
 #summarize by sleep stage:
 events_dt %>% 
