@@ -463,8 +463,9 @@ filled_df %>%
   filter(date_mdy >= analysis_start_datetime) %>% #this will drop the algo row and other things before the PSG
   ggplot(aes(x=date_mdy, y=stim_active)) +
   geom_line()
-
+####
 # 9. Identify therapy enabled periods based on user input:
+####
 
 #add a therapy enabled column based on when the efficacy portion of the night started. Manual for now, but may add something later:
 te_start_char<- dlg_input(message="Please provide a therapy enabled start time (HH:MM:SS):")$res
@@ -489,7 +490,15 @@ filled_df <- filled_df %>%
   mutate(therapy_enabled = ifelse(
     date_mdy >= therapy_enabled_start_datetime & date_mdy <= therapy_enabled_end_datetime,
     TRUE, FALSE
-  ))
+  )) %>%
+    
+    #add a categorical column for stimulating:
+    mutate(stim_cat = if_else(stim_active > 0, TRUE, FALSE),
+    
+    #and an categorical column for cat_stim during therapy enabled time:
+    stim_during_te = if_else(stim_cat==TRUE & therapy_enabled==TRUE, TRUE, FALSE)) 
+              
+           
 
 ####
 # 11. Prepare device log data (analogous to waveform data) 
@@ -523,9 +532,6 @@ filled_dt %>%
 sleeping <- filled_dt %>%
   filter(sleep_stage == "sleep") #keep only sleep data
 
-
-# Summarize by different conditions durations by stratum
-te_strata <- sleeping[, .(total_time_secs = sum(duration), total_time_hr=sum(duration)/3600), by = therapy_enabled]
 
 ####
 # 12. Match events to the device/waveform data
@@ -561,8 +567,10 @@ for (i in 1:nrow(events_dt)){
     #what was the status of stimulation when the event was starting?
     
     first(relevant_rows$therapy_enabled) -> events_dt$therapy_enabled[i]#status of therapy enabled flag
-    events_dt$stim_cat[i] <- if_else(first(relevant_rows$stim_active)> 0, T,F) #stim flag status
     events_dt$stim_val[i] <- (first(relevant_rows$stim_active)) #stim amp value 
+    events_dt$stim_cat[i] <- if_else(
+      sum(relevant_rows$stim_cat)>nrow(relevant_rows)/2, T,F #if more than half of the rows in the event are stimulating, then it's a 'stimulating' event
+    )
   }
 }
 
@@ -570,6 +578,13 @@ for (i in 1:nrow(events_dt)){
 #so replace those NAs: 
 events_dt %>%
   mutate(across(c("mean_stim","min_stim","max_stim","stim_val","stim_cat","therapy_enabled"), ~ replace_na(., 0))) -> events_dt #replace NAs with 0 for stim cols
+
+
+####
+# 13. Calculate stratified AHI:
+####
+
+## Summarize by different conditions durations by stratum
 
 #summarize by stim strata:
 events_dt %>%
@@ -583,22 +598,38 @@ events_dt %>%
   summarize(n_events = n()) -> events_by_therapy_strata
 events_by_therapy_strata
 
-#calculate time spent in each: 
+#calculate time spent in each stim category
+stim_cat_time <- sleeping %>%
+  filter(date_mdy>=analysis_start_datetime) %>%
+  group_by(stim_cat) %>%
+  summarize(total_time_secs = sum(duration), total_time_hr = sum(duration)/3600) -> stim_cat_time
+stim_cat_time
+
+#calculate time spent in each therapy category:
 te_strata_time <- sleeping %>%
+  filter(date_mdy>=analysis_start_datetime)%>% #filter out the log algo row that's many days ahead of the log prog rows 
   group_by(therapy_enabled) %>%
   summarize(total_time_secs = sum(duration), total_time_hr = sum(duration)/3600) #total time in each therapy enabled stratum
+te_strata_time
+
+#calculate an AHI by therapy_enabled strata
+AHI_by_te <- merge(
+  x= te_strata_time,
+  y=events_by_therapy_strata,by="therapy_enabled")
+
+#calculate an AHI by stim_cat strata
+AHI_by_stim <- merge(
+  x= stim_cat_time,
+  y=events_by_stim_strata,by="stim_cat")
+
+AHI_by_stim %>%
+  mutate(AHI=round(n_events/total_time_hr,1)) -> AHI_by_stim
+AHI_by_stim
+AHI_whole_night
+
+#same thing for stimulating, how are we doing?
 #summarize by sleep stage:
 events_dt %>% 
   group_by(sleep) %>% 
   summarize(n_events=n())
-
-#calculate an AHI by strata
-AHI_by_strata <- merge(
-  x= events_by_strata,
-  y=strata_time,by.x="strat_at_start",by.y = "stratum")
-
-AHI_by_strata %>%
-  mutate(AHI=round(n_events/total_time_hr,1)) -> AHI_by_strata
-
-
 #depth and length of apneas etc.
