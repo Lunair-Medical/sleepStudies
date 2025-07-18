@@ -540,7 +540,7 @@ sleeping <- filled_dt %>%
 events_dt <- as.data.table(filter(all_events,event!="Desat")) #filter out desats for AHI calculation, already has 'wake' removed
 
 #add empty columns to store summary values for the stimulation during that event and what stratum you're in when the event starts: 
-sum_cols<-c("mean_stim","max_stim","min_stim","therapy_enabled","stim_cat","stim_val")
+sum_cols<-c("mean_stim","max_stim","min_stim","therapy_enabled","stim_during_te","stim_val")
 events_dt[, (sum_cols) := NA_real_]
 
 #loop over the events dt and calculate summary values for each:
@@ -568,8 +568,8 @@ for (i in 1:nrow(events_dt)){
     
     first(relevant_rows$therapy_enabled) -> events_dt$therapy_enabled[i]#status of therapy enabled flag
     events_dt$stim_val[i] <- (first(relevant_rows$stim_active)) #stim amp value 
-    events_dt$stim_cat[i] <- if_else(
-      sum(relevant_rows$stim_cat)>nrow(relevant_rows)/2, T,F #if more than half of the rows in the event are stimulating, then it's a 'stimulating' event
+    events_dt$stim_during_te[i] <- if_else(
+      sum(relevant_rows$stim_during_te)>nrow(relevant_rows)/2, T,F #if more than half of the rows in the event are stimulating, then it's a 'stimulating' event
     )
   }
 }
@@ -577,7 +577,7 @@ for (i in 1:nrow(events_dt)){
 #several rows at the end of events_dt are NA because therapy sessions stopped before end of the study (and therefore aren't in 'sleeping' bc it's filtered to the device rows i kept):
 #so replace those NAs: 
 events_dt %>%
-  mutate(across(c("mean_stim","min_stim","max_stim","stim_val","stim_cat","therapy_enabled"), ~ replace_na(., 0))) -> events_dt #replace NAs with 0 for stim cols
+  mutate(across(c("mean_stim","min_stim","max_stim","stim_val","stim_during_te","therapy_enabled"), ~ replace_na(., 0))) -> events_dt #replace NAs with 0 for stim cols
 
 
 ####
@@ -588,7 +588,7 @@ events_dt %>%
 
 #summarize by stim strata:
 events_dt %>%
-  group_by(stim_cat) %>%
+  group_by(stim_during_te) %>%
   summarize(n_events = n()) -> events_by_stim_strata
 events_by_stim_strata
 
@@ -599,11 +599,11 @@ events_dt %>%
 events_by_therapy_strata
 
 #calculate time spent in each stim category
-stim_cat_time <- sleeping %>%
+stim_during_te_time <- sleeping %>%
   filter(date_mdy>=analysis_start_datetime) %>%
-  group_by(stim_cat) %>%
+  group_by(stim_during_te) %>%
   summarize(total_time_secs = sum(duration), total_time_hr = sum(duration)/3600) -> stim_cat_time
-stim_cat_time
+stim_during_te_time
 
 #calculate time spent in each therapy category:
 te_strata_time <- sleeping %>%
@@ -612,22 +612,27 @@ te_strata_time <- sleeping %>%
   summarize(total_time_secs = sum(duration), total_time_hr = sum(duration)/3600) #total time in each therapy enabled stratum
 te_strata_time
 
-#calculate an AHI by therapy_enabled strata
+#how are we doing during therapy enabled stimulation?
 AHI_by_te <- merge(
   x= te_strata_time,
   y=events_by_therapy_strata,by="therapy_enabled")
 
+AHI_by_te<- AHI_by_te %>%
+  mutate(AHI=round(n_events/total_time_hr,1)) #calculate AHI in events per hour
+AHI_by_te
+
+#how are we doing during stimulation during therapy time? 
+
 #calculate an AHI by stim_cat strata
 AHI_by_stim <- merge(
-  x= stim_cat_time,
-  y=events_by_stim_strata,by="stim_cat")
+  x= stim_during_te_time,
+  y=events_by_stim_strata,by="stim_during_te")
 
 AHI_by_stim %>%
   mutate(AHI=round(n_events/total_time_hr,1)) -> AHI_by_stim
 AHI_by_stim
 AHI_whole_night
 
-#same thing for stimulating, how are we doing?
 #summarize by sleep stage:
 events_dt %>% 
   group_by(sleep) %>% 
