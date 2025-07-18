@@ -7,7 +7,7 @@ library(dplyr)
 library(readr)
 
 # read in the csv desat event grid
-rawdata<-read.csv("C:/Users/GraceBurkholder/OneDrive - Lunair Medical/Documents/Repositories/Data/201-010_EventGrid_60-dayPSG_05212025.csv")
+rawdata<-read.csv("data/EventGrids/201-010_EventGrid_60-dayPSG_05212025.csv")
 
 # clean the column names
 clean_names(rawdata)->rawdata
@@ -35,7 +35,7 @@ allevents$diffSpO2[allevents$event == "Desat"] <- allevents$sp_o2_max[rawdata$ev
 ##filter the dataframe to only look at apneas and hypopneas
 respevents <- rawdata %>%
   filter(event %in% (c("A. Mixed", "A. Obstructive", "A. Central", "Hypopnea","Apnea",
-                       "H. Obstructive", "H.Mixed")))
+                       "H. Obstructive", "H. Mixed")))
 
 ##check that the apneas/hypopneas don't have any overlaps
 overlaps <- expand.grid(row_id1 = respevents$row_id, row_id2 = respevents$row_id) %>%
@@ -55,11 +55,25 @@ allevents <- allevents[!(allevents$row_id %in% overlaps$row_id2), ]
 
 ##----------------------Stuff works above this line----------------------------------------------##
 
-##get rid of any apneas or hypopneas that come immediately before a 3% desat
-#find the indices of all the hypopneas - will be checked for a following 3% desat
-events_index = which(allevents$event == "Hypopnea" , "H. Obstructive" , "H. Mixed")
-for (i in 1:length(events_index)) {
-  index = events_index[i]
-  event = allevents[index,]
-  desatafter = first(which(allevents$event=="Desat") & allevents$start_time > allevents$end_time)
-}
+#as of 18 July: so far this part below here is just returning the desatafter variable as FALSE, so I am not exactly sure what the code is doing
+#Perplexity suggests: I think this works because if a hypopnea is just followed by another hypopnea, we don't need to look at all the desats following it; we only need to look at the immediate next event to see if it's a 3% desat
+
+allhypops<-c("Hypopnea", "H. Obstructive", "H. Mixed")
+to_discard<- with(allevents,
+                  event %in% allhypops &
+                    c(event[-1], NA) =="Desat" &
+                    c(diffSpO2[-1], NA) <4
+                  )
+
+keepallevents<-allevents[!to_discard, ]
+
+# ##MEG'S SUGGESTION: get rid of any apneas or hypopneas that come immediately before a 3% desat
+# #find the indices of all the hypopneas - will be checked for a following 3% desat
+# events_index = which(allevents$event == "Hypopnea" , "H. Obstructive" , "H. Mixed")
+# for (i in 1:length(events_index)) {
+#   index = events_index[i]
+#   event = allevents[index,]
+#   desatafter = first(which(allevents$event=="Desat") & allevents$start_time > allevents$end_time)
+# }
+
+
