@@ -5,7 +5,6 @@
 
 # set up and load libraries 
 rm(list=ls())
-default_dir <- here("data/") # set default directory for file picker
 
 library(tidyverse)        # dplyr, tidyr, stringr, readr, etc.
 library(janitor)          # clean_names()
@@ -15,6 +14,8 @@ library(svDialogs)        # for file picker
 library(lubridate)        # ymd_hms()
 library(here)
 library(data.table)      # for data.table operations
+library(hms)
+library(ggpubr)
 
 lunair_palette=c(
   "#6bdbdb","#143464", "#697e9c", "#ccd9e2","#7CCDF5", "#397b96","#833080")
@@ -398,15 +399,22 @@ filled_df %>%
 
 ## Have to account for the roll pause that occurs after each log position change that is the length of roll_pause and is only enabled some of the time
 
-## Camden 7/17:
+####
+# 8. Implement roll pauses and other logic columns
+####
 
-# 8. Implement roll pauses and other logic columns 
 # Roll Pause Handling
 roll_pauses <- filled_df %>%
   filter(event_type == "LogPositionChange", roll_pause_mode == "Enabled") %>%
   select(date_mdy, roll_pause) %>%
   mutate(roll_pause_numeric = as.numeric(str_extract(roll_pause, "\\d+")),  # Extract numeric part
          pause_end = date_mdy + dminutes(roll_pause_numeric))  # Convert to minutes
+
+stop("Make sure you have checked for ghost pauses.")
+
+#### STOP HERE AND MAKE SURE YOU GET GHOST ROLL PAUSES IN 
+#add in the ghost roll pauses: 
+roll_pauses %>% bind_rows(ghost_rolls)->roll_pauses
 
 # Initialize roll_pause_active column as FALSE
 filled_df <- filled_df %>%
