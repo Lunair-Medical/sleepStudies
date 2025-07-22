@@ -30,7 +30,7 @@ lunair_palette=c(
 #   multi = FALSE,
 #   filters = dlgFilters[c("CSV files", "All files")])$res
 
-eg_fp<-here("data/201-013_60-day_EventGrid_26-Jun-2025.csv")
+eg_fp<-here("data/201-010_eventgrid.csv")
 #read in the event grid with the scored events 
 event_grid<-read.csv(eg_fp) %>% clean_names()
 
@@ -42,12 +42,40 @@ str(event_grid)
 
 #clean the event grid data (this will throw warnings about coercing factors to numeric, but that's okay):
 event_grid %>%
-  slice(-1) %>% # remove first row
-  #  mutate(phasic_amplitude=as.numeric(phasic_amplitude_max)) %>% #make numeric
-  #  mutate(stimulation=as.numeric(stimulation_max)) %>% #make numeric
-  mutate(start_time=as_hms(start_time)) %>% #this will add a date; disregard the date here
-  mutate(end_time=as_hms(end_time)) %>%
-  drop_na()-> clean_events
+  slice(-1)->event_grid
+
+#CHECK the structure of the time and add dates IFF they dont exist already:
+checkdate<-mdy_hms(event_grid$start_time[1]) #attempt to convert to mdy_hms format, will be NA if there's not a date in it.
+
+if (is.na(checkdate)) #check if the start time is in mdy_hms format
+{
+  #if it's na, not in mdy_hms format, so we need to add a date column:
+  st_dt <- dlg_input(message="Please provide a start date (YYYY-MM-DD):")$res
+  start_date<-as.Date(st_dt) #convert to Date
+  end_date<-start_date + days(1) #assume the same date for now
+  
+  clean_events <- event_grid %>%
+    mutate(
+      date = if_else(as.numeric(start_time) < 12*60*60, end_date, start_date)) %>%
+      drop_na() #events before noon automatically assigned to next day 
+  
+  #if it is NOT NA, that means it converted okay, but now i want to split it out into two:
+  clean_events <- event_grid %>%
+    mutate(
+      start_time = as_hms(start_time), #convert to hms
+      end_time = as_hms(end_time),
+      date = as.Date(start_time) #convert to hms
+    ) %>%
+    drop_na() #drop any rows with NA values in them
+}
+
+
+# event_grid %>% # remove first row
+#   #  mutate(phasic_amplitude=as.numeric(phasic_amplitude_max)) %>% #make numeric
+#   #  mutate(stimulation=as.numeric(stimulation_max)) %>% #make numeric
+#   mutate(start_time=as_hms(start_time)) %>% 
+#   mutate(end_time=as_hms(end_time)) %>%
+#   drop_na()-> clean_events
 
 #grab analysis start and end time off the nox event grid and prompt if it doesn't exist in the event grid::
 start_time <- clean_events %>%
@@ -150,7 +178,7 @@ default_dir <- here("data/")
 #   #filters = matrix(c("CSV files", "*.csv"), ncol = 3)
 # )$res
 
-file_path<-here("data/DeviceLog_[SN#000135]_26_06_2025_06_06_42.csv")
+file_path<-here("data/DeviceLog_[SN#000130]_23_06_2025_06_05_59.csv")
 
 #read in raw data... NOTE this will likely throw a warning, use problems(log_raw) to check but it should be fine 
 log_raw <- read_csv(file_path) %>% clean_names()
@@ -314,6 +342,10 @@ new_df %>%
 
 # This gives me the programmed rows, need to account for log change by order rows (which may be 0, depending on the study, but i still need to account for them):
 
+
+#drop any rows where event==NA so the double-logged events aren't included
+new_df %>% drop_na(event) -> new_df
+
 # Initialize running amplitude vector
 running_amp <- numeric(nrow(new_df))
 
@@ -321,6 +353,7 @@ running_amp <- numeric(nrow(new_df))
 current_amp <- 0
 
 # Loop through rows to update running amplitude
+
 for(i in 1:nrow(new_df)) {
   if(new_df$event[i] == "LogProgramming") {
     # Directly set the amplitude
