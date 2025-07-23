@@ -22,6 +22,11 @@ rawdata$sp_o2_min<-as.numeric(rawdata$sp_o2_min)
 rawdata$diffSpO2<-NA
 rawdata$keep<-NA
 
+#stop the program if the time coumn in rawdata is not formatted correctly
+if (!all(grepl("^\\d{2}:\\d{2}:\\d{2}\\.\\d{3}$", rawdata$start_time))) {
+  stop("Time column is not in the required HH:MM:SS.xxx format")
+}
+
 
 ##look for 3% desats
 #filter the dataframe to only look at desats and hypopneas
