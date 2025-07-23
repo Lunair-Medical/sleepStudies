@@ -7,7 +7,7 @@ library(dplyr)
 library(readr)
 
 # read in the csv desat event grid
-rawdata<-read.csv("data/EventGrids/201-010_EventGrid_90-DayPSG_06222025.csv")
+rawdata<-read.csv("data/EventGrids/201-005_EventGrid_90-DayPSG_06232025_part2.csv")
 
 # clean the column names
 clean_names(rawdata)->rawdata
