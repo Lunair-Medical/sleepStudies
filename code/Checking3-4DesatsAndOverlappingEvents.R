@@ -7,7 +7,7 @@ library(dplyr)
 library(readr)
 
 # read in the csv desat event grid
-rawdata<-read.csv("data/EventGrids/201-005_EventGrid_90-DayPSG_06232025_part2.csv")
+rawdata<-read.csv("data/EventGrids/201-005_EventGrid_90-DayPSG_06232025_part1.csv")
 
 # clean the column names
 clean_names(rawdata)->rawdata
@@ -34,7 +34,12 @@ allevents <- rawdata %>%
   filter(event %in% (c("Hypopnea", "H. Obstructive", "H.Mixed", "Desat")))
 
 #for desat rows, find the desat value and store it in a new column
-allevents$diffSpO2[allevents$event == "Desat"] <- allevents$sp_o2_max[rawdata$event == "Desat"] - allevents$sp_o2_min[rawdata$event == "Desat"]
+for (i in 1:length(allevents)) {
+  if(allevents$event[i] == "Desat") {
+    allevents$diffSpO2<-allevents$sp_o2_max-allevents$sp_o2_min
+  }
+}
+#allevents$diffSpO2[allevents$event == "Desat"] <- allevents$sp_o2_max[rawdata$event == "Desat"] - allevents$sp_o2_min[rawdata$event == "Desat"]
 
 
 ##filter the dataframe to only look at apneas and hypopneas
