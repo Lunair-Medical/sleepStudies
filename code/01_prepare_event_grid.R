@@ -32,31 +32,34 @@ str(event_grid)
 
 #clean the event grid data (this will throw warnings about coercing factors to numeric, but that's okay):
 event_grid %>%
-  slice(-1)->clean_events
+  slice(-1) %>% 
+  mutate(start_time=as_hms(start_time),
+         end_time=as_hms(end_time),
+         duration=as.numeric(duration))->clean_events
 
 ## Getting dates and times right 
 
 #grab analysis start and end time off the nox event grid and prompt if it doesn't exist in the event grid::
-start_time <- clean_events %>%
+analysis_start_time <- clean_events %>%
   filter(event == "Analysis Start") %>%
   pull(start_time) %>%
   first()
 
-if (length(start_time) != 1) {
+if (length(analysis_start_time) != 1 | !exists("analysis_start_time")) {
   stop("Analysis Start time not found in the event grid. Please provide a start time")
   st<-dlg_input(message="Please provide an analysis start time.")$res
   start_time <- as_hms(st)
 }
 
-end_time <- clean_events %>%
+analysis_end_time <- clean_events %>%
   filter(event == "Analysis End") %>%
   pull(end_time) %>%
   first()
 
-if (length(end_time) != 1 | is.na(end_time)) {
+if (length(analysis_end_time) != 1 | !exists("analysis_end_time")) {
   message("Analysis End time not found in the event grid. Please provide an end time")
   en<-dlg_input(message="Please provide an analysis end time.")$res
-  end_time <- as_hms(en)
+  analysis_end_time <- as_hms(en)
 }
 
 
@@ -68,14 +71,18 @@ if (is.na(checkdate)){ #check if the start time is in mdy_hms format
   
   #### if it's na, not in mdy_hms format, so we need to add a date column:
   st_dt <- dlg_input(message="Please provide a start date (YYYY-MM-DD):")$res
-  start_date<-as.Date(st_dt) #convert to Date
-  end_date<-start_date + days(1) #assume the same date for now
+  analysis_start_date<-as.Date(st_dt) #convert to Date
+  analysis_end_date<-analysis_start_date + days(1) #assume the same date for now
   
   clean_events <- clean_events %>%
     mutate(
-      start_date = if_else(as.numeric(start_time) < 12*60*60, end_date, start_date),
-      end_date = if_else(as.numeric(start_time) < 12*60*60, end_date, start_date)) %>%
+      start_date = if_else(as.numeric(start_time) < 12*60*60, analysis_end_date, analysis_start_date),
+      end_date = if_else(as.numeric(start_time) < 12*60*60, analysis_end_date, analysis_start_date)) %>%
     drop_na() #events before noon automatically assigned to next day 
+  
+  #put them together into a datetime: 
+  analysis_start_datetime<- as.POSIXct(analysis_start_date) + as.numeric(analysis_start_time)
+  analysis_end_datetime <- as.POSIXct(analysis_end_date) + as.numeric(analysis_end_time) } else {
   
   #######
   
@@ -91,32 +98,11 @@ if (is.na(checkdate)){ #check if the start time is in mdy_hms format
     ) %>%
     drop_na() #drop any rows with NA values in them
   
-  #put them together into a datetime: 
-  analysis_start_datetime<- as.POSIXct(start_date) + as.numeric(start_time)
-  analysis_end_datetime <- as.POSIXct(end_date) + as.numeric(end_time)
+  #name out the analysis start and end datetimes:
+  analysis_start_datetime<- first(clean_events$start_datetime)
+  analysis_end_datetime <- last(clean_events$end_datetime)
   
 }
-
-# 
-# 
-# #check if there's already a date column:
-# if (!"date" %in% names(clean_events)) {
-#   
-#   #if not, create a date column based on user input:
-#   st_dt <- dlg_input(message="Please provide a start date (YYYY-MM-DD):")$res
-#   start_date<-as.Date(st_dt) #convert to Date
-#   end_date<-start_date + days(1) #assume the same date for now
-#   
-#   clean_events <- clean_events %>%
-#     mutate(
-#       date = if_else(as.numeric(start_time) < 12*60*60, end_date, start_date))  #events before noon automatically assigned to next day 
-# }
-# 
-# #if date already exists as a column, just ensure it's in the right format and concatenate:
-# clean_events <- clean_events %>% mutate(
-#   start_datetime = as.POSIXct(date) + as.numeric(start_time),
-#   end_datetime = as.POSIXct(date) + as.numeric(end_time)
-# )
 
 
 
@@ -150,6 +136,7 @@ tst_hours<-round(total_sleep_time/3600,1) #convert to hours
 AHI_whole_night= all_events %>%
   filter(event !="Desat") %>%
   summarize(AHI=round(n()/total_sleep_time*3600,1)) #AHI in events per hour
+AHI_whole_night
 
 #this is within 0.1 of the AHI calculated in the event grid, so it seems to be working okay.
 
@@ -160,31 +147,3 @@ ODI_whole_night= all_events %>%
 
 
 ### At this point, the event grid data is loaded and ready for analysis.
-
-#Run device log data script to get the prepared device log
-
-## 
-
-if (is.na(checkdate)){ #check if the start time is in mdy_hms format
-  
-  #if it's na, not in mdy_hms format, so we need to add a date column:
-  st_dt <- dlg_input(message="Please provide a start date (YYYY-MM-DD):")$res
-  start_date<-as.Date(st_dt) #convert to Date
-  end_date<-start_date + days(1) #assume the same date for now
-  
-  clean_events <- event_grid %>%
-    mutate(
-      date = if_else(as.numeric(start_time) < 12*60*60, end_date, start_date)) %>%
-    drop_na() #events before noon automatically assigned to next day 
-  
-  #if it is NOT NA, that means it converted okay, but now i want to split it out into two:
-  clean_events <- event_grid %>%
-    mutate(
-      start_time = as_hms(start_time), #convert to hms
-      end_time = as_hms(end_time),
-      date = as.Date(start_time) #convert to hms
-    ) %>%
-    drop_na() #drop any rows with NA values in them
-}
-
-

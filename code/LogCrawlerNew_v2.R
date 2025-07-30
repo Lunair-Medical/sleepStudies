@@ -44,7 +44,7 @@ patient_id <- row_info$patient_id[1]
 message("DEBUG: patient_id = ", patient_id)
 
 # Pull milestone dates, handling possible "x" prefix
-base_milestones <- c("30d_activation_date","60d_date","90d_date")
+base_milestones <- c("30d_activation_date","60d_date","90d_date","120d_date")
 found           <- base_milestones[ base_milestones %in% names(row_info) ]
 prefixed        <- paste0("x", base_milestones)
 found_prefixed  <- prefixed[ prefixed %in% names(row_info) ]
@@ -535,7 +535,7 @@ for (i in seq_len(nrow(milestone_windows))) {
   
   # 8) save using patient_id + milestone date
   fname    <- sprintf("LogCrawler_%s_%s.xlsx", patient_id, format(wd, "%Y%m%d"))
-  out_path <- file.path(here("data/modified"), fname)
+  out_path <- file.path(here("data/"), fname)
   saveWorkbook(wb, out_path, overwrite = TRUE)
   message("✅ Written: ", out_path)
 }

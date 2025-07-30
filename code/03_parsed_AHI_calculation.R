@@ -1,9 +1,9 @@
 ## 03. Code to estimate AHI for different phases of the night
 ## Designed to read in the processed device logs and processed Nox event grids 
-# 7/15/25 last updated 
+# 7/28/25 last updated 
 
 # set up and load libraries 
-rm(list=ls())
+
 
 library(tidyverse)        # dplyr, tidyr, stringr, readr, etc.
 library(janitor)          # clean_names()
@@ -19,8 +19,12 @@ library(ggpubr)
 lunair_palette=c(
   "#6bdbdb","#143464", "#697e9c", "#ccd9e2","#7CCDF5", "#397b96","#833080")
 
-#Read in the prepared event grid .rds and the prepared device log .rds:
-
+#check to make sure the event grid and the device log have been prepared:
+if(exists("sleeping") & exists("clean_events")){
+  print("Prepared device log and clean events exist, proceeding with device log data preparation.")
+} else {
+  stop("Please run the event grid data preparation script first.")
+}
 
 ####
 # 12. Match events to the device/waveform data
@@ -30,7 +34,10 @@ events_dt <- as.data.table(filter(all_events,event!="Desat")) #filter out desats
 
 #add empty columns to store summary values for the stimulation during that event and what stratum you're in when the event starts: 
 sum_cols<-c("mean_stim","max_stim","min_stim","therapy_enabled","stim_during_te","stim_val")
+events_dt[, which_algo := NA_character_]
 events_dt[, (sum_cols) := NA_real_]
+events_dt[, start_datetime := as.POSIXct(start_date) + as.numeric(start_time)]
+events_dt[, end_datetime := as.POSIXct(end_date) + as.numeric(end_time)]
 
 #loop over the events dt and calculate summary values for each:
 for (i in 1:nrow(events_dt)){
@@ -60,6 +67,10 @@ for (i in 1:nrow(events_dt)){
     events_dt$stim_during_te[i] <- if_else(
       sum(relevant_rows$stim_during_te)>nrow(relevant_rows)/2, T,F #if more than half of the rows in the event are stimulating, then it's a 'stimulating' event
     )
+    
+    #indicate which algorithm was running and whether it was delivering stim
+    events_dt$which_algo[i] <- first(relevant_rows$which_algo)
+    events_dt$algo_with_stim[i]<-first(relevant_rows$enable_stimulation_output)
   }
 }
 
@@ -72,6 +83,11 @@ events_dt %>%
 ####
 # 13. Calculate stratified AHI:
 ####
+
+#add some columns 
+events_dt %>% 
+  mutate(AorH=case_when(event %in% c("Apnea","A. Obstructive","A. Mixed","A. Central") ~ "apnea",
+                         TRUE ~ "hypopnea")) -> events_dt
 
 ## Summarize by different conditions durations by stratum
 
@@ -155,4 +171,19 @@ grid::grid.draw(pretty.table)
 events_dt %>% 
   group_by(sleep) %>% 
   summarize(n_events=n())
+
 #depth and length of apneas etc.
+
+# parse by algorithm
+events_dt %>%  
+  group_by(which_algo,algo_with_stim) %>% 
+  summarize(n=n())->AHI_by_algo
+
+algo_strata_time <- sleeping %>%
+  filter(date_mdy>=analysis_start_datetime)%>% #filter out the log algo row that's many days ahead of the log prog rows 
+  group_by(which_algo,enable_stimulation_output) %>%
+  summarize(total_time_secs = sum(duration), total_time_hr = sum(duration)/3600) #total time in each therapy enabled stratum
+algo_strata_time
+
+#filter just to when the 
+
