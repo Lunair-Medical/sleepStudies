@@ -104,6 +104,16 @@ log_raw <- read_csv(csv_path,
     date >= ymd("2025-01-01", tz="America/Chicago")
   )
 
+#run this if it's patient 11!!: 
+if (patient_id=="201-011"){
+log_raw %>% 
+  mutate (date= date + hours(12))->log_raw 
+  
+  #write it back out
+  new_name<-paste0("corrected", basename(csv_path))
+  corrected_filepath<-file.path(here("data/"),new_name)
+  write.csv(log_raw,corrected_filepath)}
+
 ###############################################################################
 # 3.  Define windows & types                                                 #
 ###############################################################################
