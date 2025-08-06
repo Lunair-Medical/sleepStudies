@@ -9,7 +9,7 @@ odfp <- function(rel_path) {
 #helper functions: 
 extrafont::loadfonts()
 
-theme_lunair <- function(textsize=24){
+theme_lunair <- function(textsize=18){
   
   theme_minimal() %+replace% 
     theme(text = element_text(#family = "Arial", 
@@ -28,7 +28,9 @@ theme_lunair <- function(textsize=24){
   #strip.background = element_rect(fill="white"))
 }
 
-
+#custom palette: 
+lunair_palette=c(
+  "#6bdbdb","#143464", "#697e9c", "#ccd9e2","#7CCDF5", "#397b96","#833080")
 
 #this is code that's essential for parsing large labchart exported as txt: 
 # parse_labchart_txt <- function(filepath){ 
