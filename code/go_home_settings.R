@@ -5,12 +5,12 @@ library(here)
 library(purrr)
 
 #read in all the different px device logs
-px11<-read.csv(here("data/T1724-P1552-S000148-Event-20250731_090155.csv"))
-px13<-read.csv(here("data/T1727-P1555-S000135-Event-20250731_094309.csv"))
-px05<-read.csv(here("data/DeviceLog_[SN#000145]_18_07_2025_09_28_10.csv"))
-px10<-read.csv(here("data/T1675-P1503-S000130-Event-20250729_030836.csv"))
-px18<-read.csv(here("data/T1732-P1560-S000134-Event-20250731_134525.csv"))
-px24<-read.csv(here("data/T1733-P1561-S000133-Event-20250731_144901.csv"))
+px11<-read.csv("C:/Users/MegMcEachram/Desktop/Downloaded Logs/T1819-P1646-S000148-Event-20250806_013818.csv")
+px13<-read.csv("C:/Users/MegMcEachram/Desktop/Downloaded Logs/T1785-P1612-S000135-Event-20250803_111403.csv")
+px05<-read.csv("C:/Users/MegMcEachram/Desktop/Downloaded Logs/T1701-P1529-S000145-Event-20250730_085900.csv")
+px10<-read.csv("C:/Users/MegMcEachram/Desktop/Downloaded Logs/T1795-P1622-S000130-Event-20250804_083541.csv")
+px18<-read.csv("C:/Users/MegMcEachram/Desktop/Downloaded Logs/T1857-P1684-S000134-Event-20250807_071008.csv")
+px24<-read.csv("C:/Users/MegMcEachram/Desktop/Downloaded Logs/T1796-P1623-S000133-Event-20250804_085103.csv")
 
 all_dl<-list(px11,px13,px10,px18,px24,px05)
 names(all_dl) <- c("px11", "px13", "px10", "px18", "px24", "px05")
