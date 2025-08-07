@@ -38,6 +38,24 @@ filtered_data %>%
                              TRUE ~ encounter)) %>%
   mutate(value=as.numeric(value))->filtered_data
 
+
+#simplify the AI vs HI events for plotting:
+filtered_data %>%
+  mutate(parameter_simple=case_when(grepl("AI",parameter)~"Apneas",
+                                    grepl("HI",parameter)~"Hypopneas",
+                                    TRUE ~NA)) ->filtered_data
+
+#add position and sleep stage col
+filtered_data %>% 
+  mutate(position=case_when(grepl("nonsupine", parameter)~"Nonsupine", 
+                            grepl("supine",parameter) ~ "Supine",
+                            TRUE ~ "All"))%>%
+  mutate(REMnonREM=case_when(grepl("_nonREM",parameter) ~"nonREM",
+                             grepl("_REM",parameter)  ~ "REM",
+                             TRUE~ "All"))->filtered_data
+
+
+### PLOTTING LOOPS:
 #loop over and create summary tables:
 tables_list<-list(length(subj_ids))
 
@@ -51,7 +69,7 @@ for (i in 1:length(subj_ids)){
   last_psg<-tail(present_levels,1)
   
   #patient 005's 120 was a HST so we don't have TE; grab 90D instead:
-  if (compare_flag==1 & subj_ids[1]=="201-005" & last_psg=="120D"){last_psg<-tail(present_levels,2)[1]}
+  if (compare_flag==1 & subj_ids[i]=="201-005" & last_psg=="120D"){last_psg<-tail(present_levels,2)[1]}
   
 summary_csv<- patient_data%>%
   pivot_wider(id_cols = c(parameter,strata), names_from = encounter, values_from = value) %>% 
@@ -62,35 +80,24 @@ summary_csv->tables_list[[i]]
 #write.csv(summary_csv,file = paste0("data/",subj_ids[i],"_trend.csv"))
 
 
-#add position col
-summary_csv %>% 
-  mutate(position=case_when(grepl("nonsupine", parameter)~"Nonsupine", 
-                            grepl("supine",parameter) ~ "Supine",
-                            TRUE ~ "All"))%>%
-  mutate(REMnonREM=case_when(grepl("_nonREM",parameter) ~"nonREM",
-                              grepl("_REM",parameter)  ~ "REM",
-                             TRUE~ "All"))->summary_csv
-summary_csv %>%
+
+#pivot long for plotting
+AHI_plotting_data <-summary_csv %>%
   select (!c(Baseline,N1,N2))%>%
   filter(parameter %in% c( 
                           "AI","AI_supine","AI_nonsupine",
                           "HI","HI_supine","HI_nonsupine"))%>%
-  pivot_longer(cols= -c(parameter,position,strata,REMnonREM),names_to="encounter",values_to="value")-> AHI_plotting_data 
+  pivot_longer(cols= -c(parameter,position,strata,REMnonREM),names_to="encounter",values_to="value")
 
-#parse by REM/nonREM
+rem_plotting_data<- #parse by REM/nonREM
 summary_csv %>%
   select (!Baseline)%>%
   filter(parameter %in% c( 
     "AI","AI_REM","AI_nonREM",
     "HI","HI_REM","HI_nonREM"))%>%
-  pivot_longer(cols= -c(parameter,position,strata,REMnonREM),names_to="encounter",values_to="value")-> rem_plotting_data 
+  pivot_longer(cols= -c(parameter,position,strata,REMnonREM),names_to="encounter",values_to="value")
 
 
-#simplify the AI vs HI events for plotting:
-AHI_plotting_data %>%
-  mutate(parameter_simple=case_when(grepl("AI",parameter)~"Apneas",
-                                    grepl("HI",parameter)~"Hypopneas",
-                                    TRUE ~NA)) ->AHI_plotting_data
 # order the facets:
 facet_order <- c("All","Supine","Nonsupine") 
 
@@ -100,18 +107,38 @@ AHI_plotting_data %>%
                                 TRUE ~ 2)) %>% 
   filter(!(encounter %in% c("N1","N2")))->AHI_plotting_data
 
-#filter out values if i want to compare last psg TE to wn baseline:
+#filter out values if i want to compare last psg TE on to wn baseline:
 if(compare_flag==1){
 AHI_plotting_data %>%
   mutate(keep=case_when(encounter=="baseline_mean" ~ T,
                         strata=="TE" & !(encounter %in% c("baseline_mean","N1","N2")) ~ T,
-                        TRUE ~ F)) %>%
-    filter(keep)->AHI_plotting_data
+                        TRUE ~ F)) ->AHI_plotting_data
 } else {
 AHI_plotting_data %>% filter(strata == "WN")->AHI_plotting_data
 }
 
 ###PLOT WHOLE NIGHT VALUES OVER TIME
+AHI_plotting_data %>%
+  
+  filter(encounter %in% c("baseline_mean", last_psg)) %>%
+  mutate(position = factor(position, levels = facet_order)) %>%
+  #mutate(encounter = factor(encounter, levels = bar_order)) %>%
+  mutate(encounter=recode(encounter,baseline_mean="BL"))%>%
+  ggplot(aes(x = reorder_within(encounter,ordering_var,position), y = value, fill = encounter)) +
+  geom_col() +
+  facet_wrap(~position, scales = "free_x") +
+  scale_x_reordered()+
+  xlab("")+
+  ylab("AHI")+
+  #labs(fill="Composition")+
+  theme_lunair()+
+  theme(legend.position="none")+
+  scale_fill_manual(values=c(lunair_palette[4],lunair_palette[3]))->bar_wholenight
+bar_wholenight
+ggsave(plot=bar_wholenight,filename=paste0("figures/",subj_ids[i],"_barplot.png"),width = 6,height=4,units = "in")
+
+
+#stacked barplots to show composition of A/H
 AHI_plotting_data %>%
  
   filter(encounter %in% c("baseline_mean", last_psg)) %>%
@@ -131,9 +158,9 @@ AHI_plotting_data %>%
 stacked_bar_wholenight
 
 if(compare_flag==0){
-#ggsave(plot=stacked_bar_wholenight,filename=paste0("figures/",subj_ids[i],"_stackedbar.png"))
+ggsave(plot=stacked_bar_wholenight,filename=paste0("figures/",subj_ids[i],"_stackedbar.png"),width=6,height=4,units = "in")
 } else {
-#ggsave(plot=stacked_bar_wholenight,filename=paste0("figures/",subj_ids[i],"_stackedbar_TE.png"))
+ggsave(plot=stacked_bar_wholenight,filename=paste0("figures/",subj_ids[i],"_stackedbar_stim.png"),height=4,units = "in")
 }
 
 AHI_plotting_data %>%
@@ -156,9 +183,9 @@ AHI_plotting_data %>%
 
 #save the plots
 if(compare_flag==0){
-  ggsave(plot=stacked_bar_wn_prop,filename=paste0("figures/",subj_ids[i],"_stackedbar_prop.png"))
+  ggsave(plot=stacked_bar_wn_prop,filename=paste0("figures/",subj_ids[i],"_stackedbar_prop.png"),width=6,height=4)
 } else {
-  ggsave(plot=stacked_bar_wn_prop,filename=paste0("figures/",subj_ids[i],"_stackedbar_prop_TE.png"))
+  ggsave(plot=stacked_bar_wn_prop,filename=paste0("figures/",subj_ids[i],"_stackedbar_prop_stim.png"),width=6,height = 4)
 }
 
 }
@@ -176,32 +203,92 @@ for (i in 1:length(subj_ids)){
   last_psg<-tail(present_levels,1)
   
   #patient 005's 120 was a HST so we don't have TE; grab 90D instead:
-  if (compare_flag==1 & subj_ids[1]=="201-005" & last_psg=="120D"){last_psg<-tail(present_levels,2)[1]}
+  if (subj_ids[1]=="201-005"){patient_data<-filter(patient_data,encounter!="120D")}
   
   #group to get the patient baseline values 
   mean_factor_levels<-c("Baseline","30D","60D","90D","120D")
-  mean_data<-  patient_data %>%
+  mean_data<-patient_data %>%
     group_by(encounter_mean,strata, parameter)%>%
-    summarize(n=n(),mean=mean(value,na.rm=T),sd=sd(value,na.rm=T)) %>% 
-    mutate(encounter_mean=as.factor(encounter_mean)) %>% 
+    summarize(n=n(),mean=mean(value,na.rm=T),max=max(value),min=min(value)) %>% 
+    mutate(encounter_mean=as.factor(encounter_mean))->mean_data
+  mean_data<-mean_data%>% 
     mutate(encounter_mean=fct_relevel(encounter_mean,mean_factor_levels[1:length(unique(mean_data$encounter_mean))])) 
 
   
-  #dot plot
+  #dot plot whole night AHI over time
   AHI_over_time<-mean_data %>% 
     filter(strata=="WN" & parameter=="AHI") %>%
     replace_na(list(sd=0))%>% #replace the NAs with 0 to get the error bars
     ggplot(aes(x=encounter_mean,y=mean)) + 
-    geom_errorbar(aes(ymin=mean-sd,ymax=mean+sd),linewidth=0.5, color=lunair_palette[3],width=0.2)+
+    geom_errorbar(aes(ymin=min,ymax=max),linewidth=0.5, color=lunair_palette[3],width=0.2)+
     geom_point(color=lunair_palette[7],size=3)+
     geom_line(aes(x=encounter_mean,y=mean,group=1),color=lunair_palette[7],linewidth=1)+
-    geom_errorbar(aes(ymin=mean-sd,ymax=mean+sd),linewidth=0.5, color=lunair_palette[3],width=0.2)+
     theme_lunair()+
     xlab("PSG Day")+
-    ylab("Average AHI")+
+    ylab("AHI (Events/hr)")+
+    ylim(0,max(mean_data$max)+0.1*max(mean_data$max))+
     ggtitle(paste0("Subject ", subj_ids[i]," Whole-Night AHI Trend"))
   
-ggsave(plot=AHI_over_time,filename = paste0("figures/",subj_ids[i],"_AHI_progress_plot.png"))
+ggsave(plot=AHI_over_time,filename = paste0("figures/",subj_ids[i],"_AHI_progress_plot.png"),width=6,height=4,units = "in")
+}
+
+
+#loop to look at the stim on vs. baseline
+for (i in 1:length(subj_ids)){
+  patient_data<- filtered_data %>%
+    filter(patient_id==subj_ids[i])
+  
+  #what's the last psg they got?
+  present_levels<-levels(patient_data$encounter)[which(levels(patient_data$encounter) %in% unique(patient_data$encounter))]
+  last_psg<-tail(present_levels,1)
+  
+  #patient 005's 120 was a HST so we don't have TE; grab 90D instead:
+  if (subj_ids[i]=="201-005"){patient_data<-filter(patient_data,encounter!="120D")}
+  
+  #group to get the patient baseline values 
+  mean_factor_levels<-c("Baseline","30D","60D","90D","120D")
+  mean_data<-patient_data %>%
+    group_by(encounter_mean,strata, parameter)%>%
+    reframe(n=n(),mean=mean(value,na.rm=T),max=max(value),min=min(value)) %>% 
+    mutate(encounter_mean=as.factor(encounter_mean))->mean_data
+  mean_data<-mean_data%>% 
+    mutate(encounter_mean=fct_relevel(encounter_mean,mean_factor_levels[1:length(unique(mean_data$encounter_mean))])) 
+  
+  #make a keep variable to compare baseline to last_psg date 
+  mean_data %>% 
+    mutate(keep=case_when(encounter_mean=="Baseline" ~ T,
+                          encounter_mean==last_psg & grepl("stim",parameter)~ T,
+                          TRUE ~ F))%>%
+    filter(keep)->stim_comparison_data
+  
+  # add AHI column and stim column
+  stim_comparison_data %>%
+    mutate(stim=case_when(grepl("stim",parameter)~T,
+                          TRUE ~ F)) %>%
+    mutate(AHI=case_when(grepl("AHI",parameter) ~T,
+                         TRUE ~ F)) %>% 
+    mutate(position=case_when(grepl("_supine",parameter) ~ "Supine",
+                              grepl("_nonsupine",parameter) ~ "Nonsupine",
+                              TRUE ~ "All"))->stim_comparison_data
+  
+  ### THIS ISN'T WORKING at present because I need to know the AHI_stim which we don't get from the pap report
+  #make bar plots
+  stim_improvement<-stim_comparison_data %>% 
+    filter(parameter %in% c("AHI_supine","AHI_nonsupine","AHI_stim_supine","AHI_stim_nonsupine"))%>%
+    ggplot(aes(x=stim,y=mean,fill=stim))+
+    geom_col(width=0.5,position="dodge")+
+    facet_wrap(~position, scales="free_x")+
+    theme_lunair()+
+    xlab("")+
+    ylab("AHI (Events/hr)")+
+    ggtitle(paste0("Patient ", subj_ids[i]))+
+    theme(plot.title=element_text(hjust=0.5))+
+    scale_x_discrete(labels=c("Baseline","Stim On"))+
+    #ylim(0,max(stim_comparison_data$mean)+0.1*max(stim_comparison_data$mean))+
+    
+    scale_fill_manual(values=c(lunair_palette[2],lunair_palette[3]))
+             
+  ggsave(stim_improvement,filename=paste0("figures/",subj_ids[i],"_stim_improvement.png"),width=6,height=4)
 }
 
 ###################################################
