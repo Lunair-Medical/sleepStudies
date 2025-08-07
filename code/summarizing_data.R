@@ -86,16 +86,24 @@ AHI_plotting_data <-summary_csv %>%
   select (!c(Baseline,N1,N2))%>%
   filter(parameter %in% c( 
                           "AI","AI_supine","AI_nonsupine",
-                          "HI","HI_supine","HI_nonsupine"))%>%
-  pivot_longer(cols= -c(parameter,position,strata,REMnonREM),names_to="encounter",values_to="value")
+                          "HI","HI_supine","HI_nonsupine",
+                          "T90","T90_supine","T90_nonsupine",
+                          "T88", "T88_supine", "T88_nonsupine",
+                          "mean_desat","mean_desat_supine","mean_desat_nonsupine",
+                          "mean_SpO2","mean_SpO2_supine","mean_SpO2_nonsupine"))%>%
+  pivot_longer(cols= -c(parameter,,strata),names_to="encounter",values_to="value")
+
+
 
 rem_plotting_data<- #parse by REM/nonREM
-summary_csv %>%
+  summary_csv %>%
   select (!Baseline)%>%
   filter(parameter %in% c( 
     "AI","AI_REM","AI_nonREM",
     "HI","HI_REM","HI_nonREM"))%>%
-  pivot_longer(cols= -c(parameter,position,strata,REMnonREM),names_to="encounter",values_to="value")
+  pivot_longer(cols= -c(parameter,strata),names_to="encounter",values_to="value")
+
+
 
 
 # order the facets:
@@ -117,10 +125,25 @@ AHI_plotting_data %>%
 AHI_plotting_data %>% filter(strata == "WN")->AHI_plotting_data
 }
 
+#add a position value 
+AHI_plotting_data %>% 
+  mutate(position=case_when(grepl("_supine",parameter)~"Supine",
+                            grepl("_nonsupine",parameter)~"Nonsupine",
+                            TRUE ~ "All"))->AHI_plotting_data
+
+#add a parameter_simple value
+AHI_plotting_data %>% 
+  mutate(parameter_simple=case_when(grepl("AI",parameter)~"Apneas",
+                                    grepl("HI",parameter)~"Hypopneas",
+                                    TRUE ~ NA))->AHI_plotting_data
+
 ###PLOT WHOLE NIGHT VALUES OVER TIME
 AHI_plotting_data %>%
   
   filter(encounter %in% c("baseline_mean", last_psg)) %>%
+  filter(parameter %in% c( 
+    "AI","AI_supine","AI_nonsupine",
+    "HI","HI_supine","HI_nonsupine"))%>%
   mutate(position = factor(position, levels = facet_order)) %>%
   #mutate(encounter = factor(encounter, levels = bar_order)) %>%
   mutate(encounter=recode(encounter,baseline_mean="BL"))%>%
@@ -133,6 +156,7 @@ AHI_plotting_data %>%
   #labs(fill="Composition")+
   theme_lunair()+
   theme(legend.position="none")+
+  #geom_hline(aes(yintercept=20))+
   scale_fill_manual(values=c(lunair_palette[4],lunair_palette[3]))->bar_wholenight
 bar_wholenight
 ggsave(plot=bar_wholenight,filename=paste0("figures/",subj_ids[i],"_barplot.png"),width = 6,height=4,units = "in")
@@ -142,6 +166,9 @@ ggsave(plot=bar_wholenight,filename=paste0("figures/",subj_ids[i],"_barplot.png"
 AHI_plotting_data %>%
  
   filter(encounter %in% c("baseline_mean", last_psg)) %>%
+  filter(parameter %in% c( 
+    "AI","AI_supine","AI_nonsupine",
+    "HI","HI_supine","HI_nonsupine")) %>%
   mutate(position = factor(position, levels = facet_order)) %>%
   #mutate(encounter = factor(encounter, levels = bar_order)) %>%
   mutate(encounter=recode(encounter,baseline_mean="BL"))%>%
@@ -166,6 +193,9 @@ ggsave(plot=stacked_bar_wholenight,filename=paste0("figures/",subj_ids[i],"_stac
 AHI_plotting_data %>%
   #filter(strata == "WN") %>%
   filter(encounter %in% c("baseline_mean", last_psg)) %>%
+  filter(parameter %in% c( 
+    "AI","AI_supine","AI_nonsupine",
+    "HI","HI_supine","HI_nonsupine"))%>%
   mutate(position = factor(position, levels = facet_order)) %>%
   #mutate(encounter = factor(encounter, levels = bar_order)) %>%
   mutate(encounter=recode(encounter,baseline_mean="BL"))%>%
@@ -226,10 +256,80 @@ for (i in 1:length(subj_ids)){
     theme_lunair()+
     xlab("PSG Day")+
     ylab("AHI (Events/hr)")+
-    ylim(0,max(mean_data$max)+0.1*max(mean_data$max))+
+    ylim(0,max(mean_data[which(mean_data$parameter=="AHI" & mean_data$strata=="WN"),"mean"])*1.5)+
     ggtitle(paste0("Subject ", subj_ids[i]," Whole-Night AHI Trend"))
   
 ggsave(plot=AHI_over_time,filename = paste0("figures/",subj_ids[i],"_AHI_progress_plot.png"),width=6,height=4,units = "in")
+
+  #dot plot whole night T90 over time 
+T90_over_time<-mean_data %>% 
+  filter(strata=="WN" & parameter=="T90") %>% 
+  replace_na(list(sd=0))%>% #replace the NAs with 0 to get the error bars
+  ggplot(aes(x=encounter_mean,y=mean)) + 
+  geom_errorbar(aes(ymin=min,ymax=max),linewidth=0.5, color=lunair_palette[3],width=0.2)+
+  geom_point(color=lunair_palette[7],size=3)+
+  geom_line(aes(x=encounter_mean,y=mean,group=1),color=lunair_palette[7],linewidth=1)+
+  theme_lunair()+
+  xlab("PSG Day")+
+  ylab("Percent Time <90% SpO2")+
+  ylim(0,max(mean_data[which(mean_data$parameter=="T90" & mean_data$strata=="WN"),"mean"])*1.1)+
+  ggtitle(paste0("Subject ", subj_ids[i]," Whole-Night T90 Trend"))+
+  theme(plot.title = element_text(hjust=0.5))
+T90_over_time
+ggsave(plot=T90_over_time,filename = paste0("figures/",subj_ids[i],"_T90_progress_plot.png"),width=6.5,height=4,units = "in")
+
+#dot plot whole night HB over time 
+HB_over_time<-mean_data %>% 
+  filter(strata=="WN" & parameter=="HB") %>% 
+  replace_na(list(sd=0))%>% #replace the NAs with 0 to get the error bars
+  ggplot(aes(x=encounter_mean,y=mean)) + 
+  geom_errorbar(aes(ymin=min,ymax=max),linewidth=0.5, color=lunair_palette[3],width=0.2)+
+  geom_point(color=lunair_palette[7],size=3)+
+  geom_line(aes(x=encounter_mean,y=mean,group=1),color=lunair_palette[7],linewidth=1)+
+  theme_lunair()+
+  xlab("PSG Day")+
+  ylab("Hypoxic Burden (%min/hr)")+
+  ylim(0,max(mean_data[which(mean_data$parameter=="HB"),"mean"])*1.1)+
+  ggtitle(paste0("Subject ", subj_ids[i]," Whole-Night Hypoxic Burden Trend"))+
+  theme(plot.title = element_text(hjust=0.5))
+HB_over_time
+ggsave(plot=HB_over_time,filename = paste0("figures/",subj_ids[i],"_HB_progress_plot.png"),width=6.5,height=4,units = "in")
+
+
+#dot plot whole night HB over time 
+desat_over_time<-mean_data %>% 
+  filter(strata=="WN" & parameter=="mean_desat") %>% 
+  replace_na(list(sd=0))%>% #replace the NAs with 0 to get the error bars
+  ggplot(aes(x=encounter_mean,y=mean)) + 
+  geom_errorbar(aes(ymin=min,ymax=max),linewidth=0.5, color=lunair_palette[3],width=0.2)+
+  geom_point(color=lunair_palette[7],size=3)+
+  geom_line(aes(x=encounter_mean,y=mean,group=1),color=lunair_palette[7],linewidth=1)+
+  theme_lunair()+
+  xlab("PSG Day")+
+  ylab("Average % Desat")+
+  ylim(4,max(mean_data[which(mean_data$parameter=="mean_desat"),"mean"])*1.5)+
+  ggtitle(paste0("Subject ", subj_ids[i]," Whole-Night % Desat Trend"))+
+  theme(plot.title = element_text(hjust=0.5))
+desat_over_time
+ggsave(plot=desat_over_time,filename = paste0("figures/",subj_ids[i],"_desat_progress_plot.png"),width=6.5,height=4,units = "in")
+
+#dot plot whole night 
+spO2<-mean_data %>% 
+  filter(strata=="WN" & parameter=="mean_SpO2") %>% 
+  replace_na(list(sd=0))%>% #replace the NAs with 0 to get the error bars
+  ggplot(aes(x=encounter_mean,y=mean)) + 
+  geom_errorbar(aes(ymin=min,ymax=max),linewidth=0.5, color=lunair_palette[3],width=0.2)+
+  geom_point(color=lunair_palette[7],size=3)+
+  geom_line(aes(x=encounter_mean,y=mean,group=1),color=lunair_palette[7],linewidth=1)+
+  theme_lunair()+
+  xlab("PSG Day")+
+  ylab("Average SpO2")+
+  ylim(88,max(mean_data[which(mean_data$parameter=="mean_SpO2"),"mean"])*1.5)+
+  ggtitle(paste0("Subject ", subj_ids[i]," Whole-Night Oxygenation Trend"))+
+  theme(plot.title = element_text(hjust=0.5))
+spO2
+ggsave(plot=spO2,filename = paste0("figures/",subj_ids[i],"_spO2_progress_plot.png"),width=6.5,height=4,units = "in")
+
 }
 
 
@@ -271,7 +371,6 @@ for (i in 1:length(subj_ids)){
                               grepl("_nonsupine",parameter) ~ "Nonsupine",
                               TRUE ~ "All"))->stim_comparison_data
   
-  ### THIS ISN'T WORKING at present because I need to know the AHI_stim which we don't get from the pap report
   #make bar plots
   stim_improvement<-stim_comparison_data %>% 
     filter(parameter %in% c("AHI_supine","AHI_nonsupine","AHI_stim_supine","AHI_stim_nonsupine"))%>%
