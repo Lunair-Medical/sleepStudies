@@ -19,4 +19,12 @@ csv_files <- list.files(path = SI_filepath, pattern = "\\.csv$", full.names = TR
 all_data_list <- lapply(csv_files, read.csv)
 
 #bind all the rows together:
-all_data<-bind_rows(all_data_list)
+all_data<-bind_rows(all_data_list) %>% clean_names()
+
+#Filter and plot patient data
+all_ids<-unique(all_data$patient_number)
+subj_ids <- dlg_list(message="Please select a patient",choices = all_ids,multiple = T)$res
+
+#make a loop eventually
+
+patient_data<-all_data %>% filter()
