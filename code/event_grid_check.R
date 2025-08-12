@@ -6,9 +6,11 @@
 library(dplyr)
 library(readr)
 library(janitor)
+library(svDialogs)
 
 # Read the CSV file
-df <- read_csv("data/original/201-010_EventGrid_60-dayPSG_05212025.csv") %>% 
+fp<-dlgOpen(default = "data/EventGrids")$res
+df <- read_csv(fp) %>% 
   clean_names()
 
 
