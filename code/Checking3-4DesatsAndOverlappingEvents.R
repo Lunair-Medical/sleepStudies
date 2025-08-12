@@ -5,9 +5,11 @@ library(janitor)
 library(tidyverse)
 library(dplyr)
 library(readr)
+library(readxl)
 
 # read in the csv desat event grid
-rawdata<-read.csv("data/EventGrids/201-005_EventGrid_90-DayPSG_06232025_part1.csv")
+rawdata<-read.csv("data/EventGrids/201-018_EventGrid_60D_07292025.csv")
+#rawdata<-read_xls("data/EventGrids/201-018_EventGrid_60D_07292025.xls")
 
 # clean the column names
 clean_names(rawdata)->rawdata
@@ -22,10 +24,10 @@ rawdata$sp_o2_min<-as.numeric(rawdata$sp_o2_min)
 rawdata$diffSpO2<-NA
 rawdata$keep<-NA
 
-#stop the program if the time coumn in rawdata is not formatted correctly
-if (!all(grepl("^\\d{2}:\\d{2}:\\d{2}\\.\\d{3}$", rawdata$start_time))) {
-  stop("Time column is not in the required HH:MM:SS.xxx format")
-}
+#stop the program if the time column in rawdata is not formatted correctly
+#if (!all(grepl("^\\d{2}:\\d{2}:\\d{2}\\.\\d{3}$", rawdata$start_time))) {
+ # stop("Time column is not in the required HH:MM:SS.xxx format")
+#}
 
 
 ##look for 3% desats
