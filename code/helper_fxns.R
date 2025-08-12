@@ -1,3 +1,37 @@
+
+odfp <- function(rel_path) {
+  user<-Sys.getenv("USERNAME")
+  onedrive_path<-paste0("C:/Users/",user,"/Lunair Medical/R&D - Documents/FiH Data")
+  #if (path == "") stop("OneDrive path not found in environment variables.")
+  file.path(onedrive_path, rel_path)
+}
+
+#helper functions: 
+extrafont::loadfonts()
+
+theme_lunair <- function(textsize=18){
+  
+  theme_minimal() %+replace% 
+    theme(text = element_text(#family = "Arial", 
+      size = textsize), 
+      axis.ticks.length=unit(-0.05, "in"), 
+      axis.text.y.right = element_blank(), 
+      axis.text.x.top = element_blank(), 
+      axis.title.y.right = element_blank(),
+      axis.title.x.top = element_blank(),
+      #panel.border = element_rect(fill = NA),
+      plot.title = element_text(size = textsize,# face = "bold", 
+                                hjust = 0),
+      legend.position = "none",
+      panel.background = element_rect(fill = "white",colour = "white"),
+      plot.background = element_rect(fill = "white",colour = "white"))
+  #strip.background = element_rect(fill="white"))
+}
+
+#custom palette: 
+lunair_palette=c(
+  "#6bdbdb","#143464", "#697e9c", "#ccd9e2","#7CCDF5", "#397b96","#833080")
+
 #this is code that's essential for parsing large labchart exported as txt: 
 # parse_labchart_txt <- function(filepath){ 
 #   
