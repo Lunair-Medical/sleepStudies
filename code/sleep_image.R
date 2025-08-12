@@ -27,4 +27,10 @@ subj_ids <- dlg_list(message="Please select a patient",choices = all_ids,multipl
 
 #make a loop eventually
 
-patient_data<-all_data %>% filter()
+patient_data<-all_data %>% filter(patient_number==subj_ids)
+nights_used<-length(unique(patient_data$start_date))
+
+
+#make a table
+
+
