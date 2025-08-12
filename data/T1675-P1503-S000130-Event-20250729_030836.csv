@@ -1,0 +1,192 @@
+,LogSequenceNumber,RTCid = [15] - Time = [01/01/1970 00:00:00] - Seq. = [4]
+,LogCleared,LogClearOnPowerUp
+,LogNewRTCID,RTCid = [16] - Time = [01/01/1970 00:00:00]
+1/1/1970 12:00:01 AM,LogPorReset
+1/1/1970 12:00:02 AM,LogBLEConnection
+1/1/1970 12:00:02 AM,LogDailyBattMeas,2.91 V
+1/1/1970 12:00:02 AM,LogDailyTherapyTime,0 sec
+1/1/1970 12:00:02 AM,LogTotalIpgTherapyTime,338927 sec
+1/1/1970 12:00:02 AM,LogDailyTimeInEachPosition,Active = [0 sec] - Standing = [0 sec] - Reclined = [0 sec] - Lying = [0 sec] - Supine = [0 sec] - Prone = [0 sec] - RightLateral = [0 sec] - LeftLateral = [0 sec]
+1/1/1970 12:00:49 AM,LogProgramming,Device mode = [Ready] - Magnet mode = [Safety M.] - Balance mode = [Active] - TranstImpedPulseTerm = [IMP1-Case] - UprightPauseMode = [Enabled] - RollPauseMode = [Enabled] - GyroscopeMode = [Disabled] - PhasicTime = [2.0 sec] - TherapyRate = [15] bpm - RiseTime = [0.1] sec - FallTime = [0.1] sec - TonicAmplitude = [0.00 mA] - PhasicAmplitude = [1.00 mA] - OnsetRampTime = [10 min] - EndingRampTime = [0 min] - PulseWidth = [152.5 micro sec] - Frequency = [30 Hz] - InterphasePeriod = [61.0 micro sec] - BurstCycles = [2 cycles] - TherapyLength = [360] min - TherapyDelay = [15 min] - UprightPause = [8 min] - RollPause = [3 min] - MaxPhasicAmplitude = [1.40 mA] - MinPhasicAmplitude = [0.90 mA] - AmplitudeStep = [0.05 mA] - Terminal[0] = [+] - Terminal[1] = [-] - Terminal[2] = [+] - Terminal[3] = [Off] - Terminal[4] = [Off] - TranstImpedSamplingRate = [One stim. pulse] - StepUpVoltage = [Auto]
+1/1/1970 12:01:38 AM,LogNewRTCID,RTCid = [17] - Time = [01/01/1970 00:01:38]
+7/27/2025 9:40:05 PM,LogSetTime
+7/27/2025 9:40:05 PM,LogDailyBattMeas,2.88 V
+7/27/2025 9:40:05 PM,LogDailyTherapyTime,0 sec
+7/27/2025 9:40:05 PM,LogTotalIpgTherapyTime,338927 sec
+7/27/2025 9:40:05 PM,LogDailyTimeInEachPosition,Active = [0 sec] - Standing = [0 sec] - Reclined = [0 sec] - Lying = [0 sec] - Supine = [47 sec] - Prone = [0 sec] - RightLateral = [0 sec] - LeftLateral = [0 sec]
+7/27/2025 9:40:05 PM,LogDailyImpedanceMeas,LeadImpedance = [2328 Ohms] - Terminal[0] = [+] - Terminal[1] = [-] - Terminal[2] = [+] - Terminal[3] = [Off] - Terminal[4] = [Off]
+7/27/2025 9:40:29 PM,LogNewRTCID,RTCid = [18] - Time = [27/07/2025 21:40:29]
+7/27/2025 9:40:30 PM,LogSetTime
+7/27/2025 9:40:30 PM,LogDailyBattMeas,2.89 V
+7/27/2025 9:40:30 PM,LogDailyTherapyTime,0 sec
+7/27/2025 9:40:30 PM,LogTotalIpgTherapyTime,338927 sec
+7/27/2025 9:40:30 PM,LogDailyTimeInEachPosition,Active = [0 sec] - Standing = [0 sec] - Reclined = [0 sec] - Lying = [0 sec] - Supine = [25 sec] - Prone = [0 sec] - RightLateral = [0 sec] - LeftLateral = [0 sec]
+7/27/2025 9:40:30 PM,LogDailyImpedanceMeas,LeadImpedance = [2295 Ohms] - Terminal[0] = [+] - Terminal[1] = [-] - Terminal[2] = [+] - Terminal[3] = [Off] - Terminal[4] = [Off]
+7/27/2025 9:40:31 PM,LogNewRTCID,RTCid = [19] - Time = [27/07/2025 21:40:31]
+7/27/2025 9:40:30 PM,LogSetTime
+7/27/2025 9:40:30 PM,LogDailyBattMeas,2.89 V
+7/27/2025 9:40:30 PM,LogDailyTherapyTime,0 sec
+7/27/2025 9:40:30 PM,LogTotalIpgTherapyTime,338927 sec
+7/27/2025 9:40:30 PM,LogDailyTimeInEachPosition,Active = [0 sec] - Standing = [0 sec] - Reclined = [0 sec] - Lying = [0 sec] - Supine = [1 sec] - Prone = [0 sec] - RightLateral = [0 sec] - LeftLateral = [0 sec]
+7/27/2025 9:40:30 PM,LogDailyImpedanceMeas,LeadImpedance = [2305 Ohms] - Terminal[0] = [+] - Terminal[1] = [-] - Terminal[2] = [+] - Terminal[3] = [Off] - Terminal[4] = [Off]
+7/27/2025 9:44:40 PM,LogProgramming,Device mode = [Ready] - Magnet mode = [Safety M.] - Balance mode = [Active] - TranstImpedPulseTerm = [IMP1-Case] - UprightPauseMode = [Disabled] - RollPauseMode = [Disabled] - GyroscopeMode = [Disabled] - PhasicTime = [1.5 sec] - TherapyRate = [20] bpm - RiseTime = [0.6] sec - FallTime = [0.2] sec - TonicAmplitude = [0.00 mA] - PhasicAmplitude = [0.65 mA] - OnsetRampTime = [0 min] - EndingRampTime = [0 min] - PulseWidth = [305.0 micro sec] - Frequency = [30 Hz] - InterphasePeriod = [30.5 micro sec] - BurstCycles = [2 cycles] - TherapyLength = [480] min - TherapyDelay = [0 min] - UprightPause = [8 min] - RollPause = [3 min] - MaxPhasicAmplitude = [1.40 mA] - MinPhasicAmplitude = [0.60 mA] - AmplitudeStep = [0.05 mA] - Terminal[0] = [+] - Terminal[1] = [-] - Terminal[2] = [+] - Terminal[3] = [Off] - Terminal[4] = [Off] - TranstImpedSamplingRate = [One stim. pulse] - StepUpVoltage = [Auto]
+7/27/2025 9:45:10 PM,LogProgAlgoLL,TTI Averaging Filter = [500 msec]] - TTI Peak Detect = [500 msec] - Min Valid TTI Pk-Pk = [150 mohm] - Max Valid TTI Pk-Pk = [2000 mohm] - Max Valid TTI Pt-Pt = [500 mohm] - Min Respiration Period = [2500 msec] - Max Respiration Period = [6000 msec] - Reserved 1 = [0 msec] - Reserved 2 = [0 msec] - Stim Advance = [200 msec] - Respiration Cycle Count = [3] - Automatic Stim Count = [3] - Recovery Burst = [1000 msec] - Recovery Burst Wait = [30 sec] - Recovery Burst Count = [0] - Intermittent Stim Count = [1] - Enable TTI Predict Algorithm = [0] - Enable XYZ Algorithm = [0] - Enable Centered Inhalation = [0] - Enable Stimulation Output = [1] - Enable TTI Freq Lock Algorithm = [0]
+7/27/2025 9:46:39 PM,LogBLEDisconnection
+7/27/2025 9:49:42 PM,LogBLEConnection
+7/27/2025 9:51:24 PM,LogBLEDisconnection
+7/27/2025 10:04:36 PM,LogBLEConnection
+7/27/2025 10:09:41 PM,LogPositionChange,Posture = [LeftLateral]
+7/27/2025 10:14:21 PM,LogPositionChange,Posture = [Supine]
+7/27/2025 10:14:31 PM,LogPositionChange,Posture = [Standing]
+7/27/2025 10:15:08 PM,LogPositionChange,Posture = [Reclined]
+7/27/2025 10:16:09 PM,LogPositionChange,Posture = [LeftLateral]
+7/27/2025 10:22:19 PM,LogStartMarkerSession
+7/27/2025 10:30:25 PM,LogBLEDisconnection
+7/27/2025 10:30:26 PM,LogStopMarkerSession
+7/27/2025 10:31:18 PM,LogPositionChange,Posture = [Active]
+7/27/2025 10:31:25 PM,LogPositionChange,Posture = [Reclined]
+7/27/2025 10:33:13 PM,LogBLEConnection
+7/27/2025 10:33:19 PM,LogStartMarkerSession
+7/27/2025 10:41:39 PM,LogBLEDisconnection
+7/27/2025 10:41:39 PM,LogStopMarkerSession
+7/27/2025 10:44:14 PM,LogBLEConnection
+7/27/2025 10:44:18 PM,LogBLEDisconnection
+7/27/2025 10:44:35 PM,LogBLEConnection
+7/27/2025 10:44:38 PM,LogBLEDisconnection
+7/27/2025 10:45:46 PM,LogBLEConnection
+7/27/2025 10:46:04 PM,LogStartMarkerSession
+7/27/2025 10:46:49 PM,LogProgramming,Device mode = [Ready] - Magnet mode = [Safety M.] - Balance mode = [Active] - TranstImpedPulseTerm = [IMP1-Case] - UprightPauseMode = [Disabled] - RollPauseMode = [Disabled] - GyroscopeMode = [Disabled] - PhasicTime = [1.5 sec] - TherapyRate = [10] bpm - RiseTime = [0.6] sec - FallTime = [0.2] sec - TonicAmplitude = [0.00 mA] - PhasicAmplitude = [0.55 mA] - OnsetRampTime = [0 min] - EndingRampTime = [0 min] - PulseWidth = [305.0 micro sec] - Frequency = [30 Hz] - InterphasePeriod = [30.5 micro sec] - BurstCycles = [2 cycles] - TherapyLength = [480] min - TherapyDelay = [0 min] - UprightPause = [8 min] - RollPause = [3 min] - MaxPhasicAmplitude = [1.40 mA] - MinPhasicAmplitude = [0.45 mA] - AmplitudeStep = [0.05 mA] - Terminal[0] = [+] - Terminal[1] = [-] - Terminal[2] = [+] - Terminal[3] = [Off] - Terminal[4] = [Off] - TranstImpedSamplingRate = [One stim. pulse] - StepUpVoltage = [Auto]
+7/27/2025 10:47:53 PM,LogTherapyStart,BatteryLevel = [2.88 V] - LeadImpedance = [2290 Ohms] - Terminal[0] = [+] - Terminal[1] = [-] - Terminal[2] = [+] - Terminal[3] = [Off] - Terminal[4] = [Off]
+7/27/2025 10:48:38 PM,LogChangeAmplitudeByOrder,WasIncreased = [Yes] - OrderFromMobileApp = [No] - AmplitudeStep = [0.05 mA]
+7/27/2025 10:50:17 PM,LogChangeAmplitudeByOrder,WasIncreased = [Yes] - OrderFromMobileApp = [No] - AmplitudeStep = [0.05 mA]
+7/27/2025 10:52:04 PM,LogChangeAmplitudeByOrder,WasIncreased = [Yes] - OrderFromMobileApp = [No] - AmplitudeStep = [0.05 mA]
+7/27/2025 10:54:29 PM,LogTherapyEnd,TherapyDuration = [396 sec] - TherapyEndCause = [StopByOrder]
+7/27/2025 10:58:08 PM,LogProgramming,Device mode = [Ready] - Magnet mode = [Safety M.] - Balance mode = [Active] - TranstImpedPulseTerm = [IMP1-Case] - UprightPauseMode = [Disabled] - RollPauseMode = [Disabled] - GyroscopeMode = [Disabled] - PhasicTime = [1.5 sec] - TherapyRate = [18] bpm - RiseTime = [0.6] sec - FallTime = [0.2] sec - TonicAmplitude = [0.00 mA] - PhasicAmplitude = [0.65 mA] - OnsetRampTime = [0 min] - EndingRampTime = [0 min] - PulseWidth = [305.0 micro sec] - Frequency = [30 Hz] - InterphasePeriod = [30.5 micro sec] - BurstCycles = [2 cycles] - TherapyLength = [480] min - TherapyDelay = [0 min] - UprightPause = [8 min] - RollPause = [3 min] - MaxPhasicAmplitude = [1.40 mA] - MinPhasicAmplitude = [0.45 mA] - AmplitudeStep = [0.05 mA] - Terminal[0] = [+] - Terminal[1] = [-] - Terminal[2] = [+] - Terminal[3] = [Off] - Terminal[4] = [Off] - TranstImpedSamplingRate = [One stim. pulse] - StepUpVoltage = [Auto]
+7/27/2025 10:58:37 PM,LogBLEDisconnection
+7/27/2025 10:58:37 PM,LogStopMarkerSession
+7/27/2025 10:59:32 PM,LogBLEConnection
+7/27/2025 10:59:40 PM,LogStartMarkerSession
+7/27/2025 11:02:36 PM,LogTherapyStart,BatteryLevel = [2.90 V] - LeadImpedance = [2152 Ohms] - Terminal[0] = [+] - Terminal[1] = [-] - Terminal[2] = [+] - Terminal[3] = [Off] - Terminal[4] = [Off]
+7/27/2025 11:03:22 PM,LogChangeAmplitudeByOrder,WasIncreased = [Yes] - OrderFromMobileApp = [No] - AmplitudeStep = [0.05 mA]
+7/27/2025 11:04:06 PM,LogPositionChange,Posture = [Supine]
+7/27/2025 11:04:36 PM,LogChangeAmplitudeByOrder,WasIncreased = [Yes] - OrderFromMobileApp = [No] - AmplitudeStep = [0.05 mA]
+7/27/2025 11:05:53 PM,LogChangeAmplitudeByOrder,WasIncreased = [Yes] - OrderFromMobileApp = [No] - AmplitudeStep = [0.05 mA]
+7/27/2025 11:06:07 PM,LogPositionChange,Posture = [Active]
+7/27/2025 11:06:10 PM,LogPositionChange,Posture = [Reclined]
+7/27/2025 11:06:19 PM,LogChangeAmplitudeByOrder,WasIncreased = [No] - OrderFromMobileApp = [No] - AmplitudeStep = [0.05 mA]
+7/27/2025 11:06:21 PM,LogChangeAmplitudeByOrder,WasIncreased = [No] - OrderFromMobileApp = [No] - AmplitudeStep = [0.05 mA]
+7/27/2025 11:08:01 PM,LogChangeAmplitudeByOrder,WasIncreased = [Yes] - OrderFromMobileApp = [No] - AmplitudeStep = [0.05 mA]
+7/27/2025 11:09:44 PM,LogChangeAmplitudeByOrder,WasIncreased = [Yes] - OrderFromMobileApp = [No] - AmplitudeStep = [0.05 mA]
+7/27/2025 11:09:57 PM,LogPositionChange,Posture = [RightLateral]
+7/27/2025 11:10:17 PM,LogChangeAmplitudeByOrder,WasIncreased = [No] - OrderFromMobileApp = [No] - AmplitudeStep = [0.05 mA]
+7/27/2025 11:10:24 PM,LogChangeAmplitudeByOrder,WasIncreased = [No] - OrderFromMobileApp = [No] - AmplitudeStep = [0.05 mA]
+7/27/2025 11:11:00 PM,LogTherapyEnd,TherapyDuration = [503 sec] - TherapyEndCause = [StopByOrder]
+7/27/2025 11:13:42 PM,LogProgAlgoLL,TTI Averaging Filter = [500 msec]] - TTI Peak Detect = [500 msec] - Min Valid TTI Pk-Pk = [150 mohm] - Max Valid TTI Pk-Pk = [2000 mohm] - Max Valid TTI Pt-Pt = [500 mohm] - Min Respiration Period = [2500 msec] - Max Respiration Period = [6000 msec] - Reserved 1 = [0 msec] - Reserved 2 = [0 msec] - Stim Advance = [200 msec] - Respiration Cycle Count = [3] - Automatic Stim Count = [3] - Recovery Burst = [1000 msec] - Recovery Burst Wait = [30 sec] - Recovery Burst Count = [0] - Intermittent Stim Count = [1] - Enable TTI Predict Algorithm = [0] - Enable XYZ Algorithm = [0] - Enable Centered Inhalation = [0] - Enable Stimulation Output = [1] - Enable TTI Freq Lock Algorithm = [1]
+7/27/2025 11:13:47 PM,LogProgAlgoLL,TTI Averaging Filter = [500 msec]] - TTI Peak Detect = [500 msec] - Min Valid TTI Pk-Pk = [150 mohm] - Max Valid TTI Pk-Pk = [2000 mohm] - Max Valid TTI Pt-Pt = [500 mohm] - Min Respiration Period = [2500 msec] - Max Respiration Period = [6000 msec] - Reserved 1 = [0 msec] - Reserved 2 = [0 msec] - Stim Advance = [200 msec] - Respiration Cycle Count = [3] - Automatic Stim Count = [3] - Recovery Burst = [1000 msec] - Recovery Burst Wait = [30 sec] - Recovery Burst Count = [0] - Intermittent Stim Count = [1] - Enable TTI Predict Algorithm = [0] - Enable XYZ Algorithm = [0] - Enable Centered Inhalation = [0] - Enable Stimulation Output = [1] - Enable TTI Freq Lock Algorithm = [1]
+7/27/2025 11:13:59 PM,LogTherapyStart,BatteryLevel = [2.90 V] - LeadImpedance = [2047 Ohms] - Terminal[0] = [+] - Terminal[1] = [-] - Terminal[2] = [+] - Terminal[3] = [Off] - Terminal[4] = [Off]
+7/27/2025 11:18:46 PM,LogProgramming,Device mode = [Ready] - Magnet mode = [Safety M.] - Balance mode = [Active] - TranstImpedPulseTerm = [IMP1-Case] - UprightPauseMode = [Disabled] - RollPauseMode = [Disabled] - GyroscopeMode = [Disabled] - PhasicTime = [1.5 sec] - TherapyRate = [25] bpm - RiseTime = [0.6] sec - FallTime = [0.2] sec - TonicAmplitude = [0.00 mA] - PhasicAmplitude = [0.65 mA] - OnsetRampTime = [0 min] - EndingRampTime = [0 min] - PulseWidth = [305.0 micro sec] - Frequency = [30 Hz] - InterphasePeriod = [30.5 micro sec] - BurstCycles = [2 cycles] - TherapyLength = [480] min - TherapyDelay = [0 min] - UprightPause = [8 min] - RollPause = [3 min] - MaxPhasicAmplitude = [1.40 mA] - MinPhasicAmplitude = [0.45 mA] - AmplitudeStep = [0.05 mA] - Terminal[0] = [+] - Terminal[1] = [-] - Terminal[2] = [+] - Terminal[3] = [Off] - Terminal[4] = [Off] - TranstImpedSamplingRate = [One stim. pulse] - StepUpVoltage = [Auto]
+7/27/2025 11:19:44 PM,LogChangeAmplitudeByOrder,WasIncreased = [Yes] - OrderFromMobileApp = [No] - AmplitudeStep = [0.05 mA]
+7/27/2025 11:21:23 PM,LogChangeAmplitudeByOrder,WasIncreased = [Yes] - OrderFromMobileApp = [No] - AmplitudeStep = [0.05 mA]
+7/27/2025 11:25:37 PM,LogProgAlgoLL,TTI Averaging Filter = [500 msec]] - TTI Peak Detect = [500 msec] - Min Valid TTI Pk-Pk = [150 mohm] - Max Valid TTI Pk-Pk = [2000 mohm] - Max Valid TTI Pt-Pt = [500 mohm] - Min Respiration Period = [2000 msec] - Max Respiration Period = [6000 msec] - Reserved 1 = [0 msec] - Reserved 2 = [0 msec] - Stim Advance = [200 msec] - Respiration Cycle Count = [3] - Automatic Stim Count = [3] - Recovery Burst = [1000 msec] - Recovery Burst Wait = [30 sec] - Recovery Burst Count = [0] - Intermittent Stim Count = [1] - Enable TTI Predict Algorithm = [0] - Enable XYZ Algorithm = [0] - Enable Centered Inhalation = [0] - Enable Stimulation Output = [1] - Enable TTI Freq Lock Algorithm = [1]
+7/27/2025 11:27:33 PM,LogChangeAmplitudeByOrder,WasIncreased = [Yes] - OrderFromMobileApp = [No] - AmplitudeStep = [0.05 mA]
+7/27/2025 11:27:47 PM,LogPositionChange,Posture = [Active]
+7/27/2025 11:27:50 PM,LogPositionChange,Posture = [LeftLateral]
+7/27/2025 11:27:51 PM,LogChangeAmplitudeByOrder,WasIncreased = [No] - OrderFromMobileApp = [No] - AmplitudeStep = [0.05 mA]
+7/27/2025 11:27:54 PM,LogChangeAmplitudeByOrder,WasIncreased = [No] - OrderFromMobileApp = [No] - AmplitudeStep = [0.05 mA]
+7/27/2025 11:30:27 PM,LogProgramming,Device mode = [Ready] - Magnet mode = [Safety M.] - Balance mode = [Active] - TranstImpedPulseTerm = [IMP1-Case] - UprightPauseMode = [Disabled] - RollPauseMode = [Disabled] - GyroscopeMode = [Disabled] - PhasicTime = [1.5 sec] - TherapyRate = [25] bpm - RiseTime = [0.6] sec - FallTime = [0.2] sec - TonicAmplitude = [0.00 mA] - PhasicAmplitude = [0.65 mA] - OnsetRampTime = [0 min] - EndingRampTime = [0 min] - PulseWidth = [396.5 micro sec] - Frequency = [30 Hz] - InterphasePeriod = [30.5 micro sec] - BurstCycles = [2 cycles] - TherapyLength = [480] min - TherapyDelay = [0 min] - UprightPause = [8 min] - RollPause = [3 min] - MaxPhasicAmplitude = [1.40 mA] - MinPhasicAmplitude = [0.45 mA] - AmplitudeStep = [0.05 mA] - Terminal[0] = [+] - Terminal[1] = [-] - Terminal[2] = [+] - Terminal[3] = [Off] - Terminal[4] = [Off] - TranstImpedSamplingRate = [One stim. pulse] - StepUpVoltage = [Auto]
+7/27/2025 11:32:55 PM,LogTherapyEnd,TherapyDuration = [845 sec] - TherapyEndCause = [StopByOrder]
+7/27/2025 11:34:22 PM,LogPositionChange,Posture = [Supine]
+7/27/2025 11:34:29 PM,LogPositionChange,Posture = [LeftLateral]
+7/27/2025 11:36:36 PM,LogPositionChange,Posture = [Supine]
+7/27/2025 11:36:39 PM,LogPositionChange,Posture = [LeftLateral]
+7/27/2025 11:40:00 PM,LogTherapyStart,BatteryLevel = [2.90 V] - LeadImpedance = [1851 Ohms] - Terminal[0] = [+] - Terminal[1] = [-] - Terminal[2] = [+] - Terminal[3] = [Off] - Terminal[4] = [Off]
+7/27/2025 11:42:43 PM,LogProgAlgoLL,TTI Averaging Filter = [500 msec]] - TTI Peak Detect = [500 msec] - Min Valid TTI Pk-Pk = [150 mohm] - Max Valid TTI Pk-Pk = [2000 mohm] - Max Valid TTI Pt-Pt = [500 mohm] - Min Respiration Period = [2000 msec] - Max Respiration Period = [6000 msec] - Reserved 1 = [0 msec] - Reserved 2 = [0 msec] - Stim Advance = [200 msec] - Respiration Cycle Count = [3] - Automatic Stim Count = [30000] - Recovery Burst = [1000 msec] - Recovery Burst Wait = [30 sec] - Recovery Burst Count = [0] - Intermittent Stim Count = [1] - Enable TTI Predict Algorithm = [1] - Enable XYZ Algorithm = [0] - Enable Centered Inhalation = [0] - Enable Stimulation Output = [1] - Enable TTI Freq Lock Algorithm = [0]
+7/27/2025 11:45:34 PM,LogPositionChange,Posture = [Supine]
+7/27/2025 11:53:03 PM,LogTherapyEnd,TherapyDuration = [588 sec] - TherapyEndCause = [StopByOrder]
+7/27/2025 11:59:53 PM,LogProgAlgoLL,TTI Averaging Filter = [500 msec]] - TTI Peak Detect = [500 msec] - Min Valid TTI Pk-Pk = [150 mohm] - Max Valid TTI Pk-Pk = [2000 mohm] - Max Valid TTI Pt-Pt = [500 mohm] - Min Respiration Period = [2000 msec] - Max Respiration Period = [6000 msec] - Reserved 1 = [0 msec] - Reserved 2 = [0 msec] - Stim Advance = [200 msec] - Respiration Cycle Count = [3] - Automatic Stim Count = [30000] - Recovery Burst = [1000 msec] - Recovery Burst Wait = [30 sec] - Recovery Burst Count = [0] - Intermittent Stim Count = [1] - Enable TTI Predict Algorithm = [1] - Enable XYZ Algorithm = [0] - Enable Centered Inhalation = [0] - Enable Stimulation Output = [0] - Enable TTI Freq Lock Algorithm = [0]
+7/28/2025 12:00:00 AM,LogDailyBattMeas,2.88 V
+7/28/2025 12:00:00 AM,LogDailyTherapyTime,2332 sec
+7/28/2025 12:00:00 AM,LogTotalIpgTherapyTime,341259 sec
+7/28/2025 12:00:00 AM,LogDailyTimeInEachPosition,Active = [13 sec] - Standing = [55 sec] - Reclined = [2494 sec] - Lying = [0 sec] - Supine = [2487 sec] - Prone = [0 sec] - RightLateral = [1070 sec] - LeftLateral = [2252 sec]
+7/28/2025 12:00:04 AM,LogTherapyStart,BatteryLevel = [2.88 V] - LeadImpedance = [1981 Ohms] - Terminal[0] = [+] - Terminal[1] = [-] - Terminal[2] = [+] - Terminal[3] = [Off] - Terminal[4] = [Off]
+7/28/2025 12:01:54 AM,LogProgAlgoLL,TTI Averaging Filter = [500 msec]] - TTI Peak Detect = [500 msec] - Min Valid TTI Pk-Pk = [150 mohm] - Max Valid TTI Pk-Pk = [2000 mohm] - Max Valid TTI Pt-Pt = [500 mohm] - Min Respiration Period = [2000 msec] - Max Respiration Period = [6000 msec] - Reserved 1 = [0 msec] - Reserved 2 = [0 msec] - Stim Advance = [200 msec] - Respiration Cycle Count = [3] - Automatic Stim Count = [30000] - Recovery Burst = [1000 msec] - Recovery Burst Wait = [30 sec] - Recovery Burst Count = [0] - Intermittent Stim Count = [1] - Enable TTI Predict Algorithm = [1] - Enable XYZ Algorithm = [0] - Enable Centered Inhalation = [0] - Enable Stimulation Output = [1] - Enable TTI Freq Lock Algorithm = [0]
+7/28/2025 12:07:41 AM,LogChangeAmplitudeByOrder,WasIncreased = [Yes] - OrderFromMobileApp = [No] - AmplitudeStep = [0.05 mA]
+7/28/2025 12:09:03 AM,LogProgramming,Device mode = [Ready] - Magnet mode = [Safety M.] - Balance mode = [Active] - TranstImpedPulseTerm = [IMP1-Case] - UprightPauseMode = [Disabled] - RollPauseMode = [Disabled] - GyroscopeMode = [Disabled] - PhasicTime = [1.5 sec] - TherapyRate = [25] bpm - RiseTime = [0.6] sec - FallTime = [0.2] sec - TonicAmplitude = [0.00 mA] - PhasicAmplitude = [0.50 mA] - OnsetRampTime = [0 min] - EndingRampTime = [0 min] - PulseWidth = [396.5 micro sec] - Frequency = [30 Hz] - InterphasePeriod = [30.5 micro sec] - BurstCycles = [2 cycles] - TherapyLength = [480] min - TherapyDelay = [0 min] - UprightPause = [8 min] - RollPause = [3 min] - MaxPhasicAmplitude = [1.40 mA] - MinPhasicAmplitude = [0.45 mA] - AmplitudeStep = [0.05 mA] - Terminal[0] = [+] - Terminal[1] = [-] - Terminal[2] = [+] - Terminal[3] = [Off] - Terminal[4] = [Off] - TranstImpedSamplingRate = [One stim. pulse] - StepUpVoltage = [Auto]
+7/28/2025 12:11:51 AM,LogProgramming,Device mode = [Ready] - Magnet mode = [Safety M.] - Balance mode = [Active] - TranstImpedPulseTerm = [IMP1-Case] - UprightPauseMode = [Disabled] - RollPauseMode = [Disabled] - GyroscopeMode = [Disabled] - PhasicTime = [1.5 sec] - TherapyRate = [25] bpm - RiseTime = [0.6] sec - FallTime = [0.2] sec - TonicAmplitude = [0.00 mA] - PhasicAmplitude = [0.70 mA] - OnsetRampTime = [0 min] - EndingRampTime = [0 min] - PulseWidth = [396.5 micro sec] - Frequency = [30 Hz] - InterphasePeriod = [30.5 micro sec] - BurstCycles = [2 cycles] - TherapyLength = [480] min - TherapyDelay = [0 min] - UprightPause = [8 min] - RollPause = [3 min] - MaxPhasicAmplitude = [1.40 mA] - MinPhasicAmplitude = [0.45 mA] - AmplitudeStep = [0.05 mA] - Terminal[0] = [+] - Terminal[1] = [-] - Terminal[2] = [+] - Terminal[3] = [Off] - Terminal[4] = [Off] - TranstImpedSamplingRate = [One stim. pulse] - StepUpVoltage = [Auto]
+7/28/2025 12:13:48 AM,LogProgramming,Device mode = [Ready] - Magnet mode = [Safety M.] - Balance mode = [Active] - TranstImpedPulseTerm = [IMP1-Case] - UprightPauseMode = [Disabled] - RollPauseMode = [Disabled] - GyroscopeMode = [Disabled] - PhasicTime = [1.5 sec] - TherapyRate = [25] bpm - RiseTime = [0.6] sec - FallTime = [0.2] sec - TonicAmplitude = [0.00 mA] - PhasicAmplitude = [0.70 mA] - OnsetRampTime = [0 min] - EndingRampTime = [0 min] - PulseWidth = [396.5 micro sec] - Frequency = [30 Hz] - InterphasePeriod = [30.5 micro sec] - BurstCycles = [2 cycles] - TherapyLength = [480] min - TherapyDelay = [0 min] - UprightPause = [8 min] - RollPause = [3 min] - MaxPhasicAmplitude = [1.40 mA] - MinPhasicAmplitude = [0.45 mA] - AmplitudeStep = [0.05 mA] - Terminal[0] = [+] - Terminal[1] = [-] - Terminal[2] = [+] - Terminal[3] = [Off] - Terminal[4] = [Off] - TranstImpedSamplingRate = [One stim. pulse] - StepUpVoltage = [Auto]
+7/28/2025 12:14:15 AM,LogProgramming,Device mode = [Ready] - Magnet mode = [Safety M.] - Balance mode = [Active] - TranstImpedPulseTerm = [IMP1-Case] - UprightPauseMode = [Disabled] - RollPauseMode = [Disabled] - GyroscopeMode = [Disabled] - PhasicTime = [1.5 sec] - TherapyRate = [25] bpm - RiseTime = [0.6] sec - FallTime = [0.2] sec - TonicAmplitude = [0.00 mA] - PhasicAmplitude = [0.70 mA] - OnsetRampTime = [0 min] - EndingRampTime = [0 min] - PulseWidth = [396.5 micro sec] - Frequency = [40 Hz] - InterphasePeriod = [30.5 micro sec] - BurstCycles = [2 cycles] - TherapyLength = [480] min - TherapyDelay = [0 min] - UprightPause = [8 min] - RollPause = [3 min] - MaxPhasicAmplitude = [1.40 mA] - MinPhasicAmplitude = [0.45 mA] - AmplitudeStep = [0.05 mA] - Terminal[0] = [+] - Terminal[1] = [-] - Terminal[2] = [+] - Terminal[3] = [Off] - Terminal[4] = [Off] - TranstImpedSamplingRate = [One stim. pulse] - StepUpVoltage = [Auto]
+7/28/2025 12:15:35 AM,LogPositionChange,Posture = [LeftLateral]
+7/28/2025 12:15:38 AM,LogPositionChange,Posture = [Supine]
+7/28/2025 12:15:43 AM,LogPositionChange,Posture = [Reclined]
+7/28/2025 12:44:14 AM,LogPositionChange,Posture = [RightLateral]
+7/28/2025 12:44:17 AM,LogPositionChange,Posture = [Reclined]
+7/28/2025 12:44:24 AM,LogPositionChange,Posture = [RightLateral]
+7/28/2025 12:49:51 AM,LogPositionChange,Posture = [Reclined]
+7/28/2025 12:49:58 AM,LogPositionChange,Posture = [Supine]
+7/28/2025 12:57:22 AM,LogProgAlgoLL,TTI Averaging Filter = [500 msec]] - TTI Peak Detect = [500 msec] - Min Valid TTI Pk-Pk = [150 mohm] - Max Valid TTI Pk-Pk = [2000 mohm] - Max Valid TTI Pt-Pt = [500 mohm] - Min Respiration Period = [2000 msec] - Max Respiration Period = [6000 msec] - Reserved 1 = [0 msec] - Reserved 2 = [0 msec] - Stim Advance = [200 msec] - Respiration Cycle Count = [3] - Automatic Stim Count = [30000] - Recovery Burst = [1000 msec] - Recovery Burst Wait = [30 sec] - Recovery Burst Count = [0] - Intermittent Stim Count = [1] - Enable TTI Predict Algorithm = [0] - Enable XYZ Algorithm = [0] - Enable Centered Inhalation = [0] - Enable Stimulation Output = [1] - Enable TTI Freq Lock Algorithm = [0]
+7/28/2025 12:57:27 AM,LogProgramming,Device mode = [Ready] - Magnet mode = [Safety M.] - Balance mode = [Active] - TranstImpedPulseTerm = [IMP1-Case] - UprightPauseMode = [Disabled] - RollPauseMode = [Disabled] - GyroscopeMode = [Disabled] - PhasicTime = [1.5 sec] - TherapyRate = [18] bpm - RiseTime = [0.6] sec - FallTime = [0.2] sec - TonicAmplitude = [0.00 mA] - PhasicAmplitude = [0.70 mA] - OnsetRampTime = [0 min] - EndingRampTime = [0 min] - PulseWidth = [396.5 micro sec] - Frequency = [40 Hz] - InterphasePeriod = [30.5 micro sec] - BurstCycles = [2 cycles] - TherapyLength = [480] min - TherapyDelay = [0 min] - UprightPause = [8 min] - RollPause = [3 min] - MaxPhasicAmplitude = [1.40 mA] - MinPhasicAmplitude = [0.45 mA] - AmplitudeStep = [0.05 mA] - Terminal[0] = [+] - Terminal[1] = [-] - Terminal[2] = [+] - Terminal[3] = [Off] - Terminal[4] = [Off] - TranstImpedSamplingRate = [One stim. pulse] - StepUpVoltage = [Auto]
+7/28/2025 1:08:16 AM,LogPositionChange,Posture = [Reclined]
+7/28/2025 1:10:59 AM,LogChangeAmplitudeByOrder,WasIncreased = [Yes] - OrderFromMobileApp = [No] - AmplitudeStep = [0.05 mA]
+7/28/2025 1:11:57 AM,LogPositionChange,Posture = [Active]
+7/28/2025 1:12:03 AM,LogPositionChange,Posture = [LeftLateral]
+7/28/2025 1:12:26 AM,LogChangeAmplitudeByOrder,WasIncreased = [No] - OrderFromMobileApp = [No] - AmplitudeStep = [0.05 mA]
+7/28/2025 1:14:29 AM,LogBLEDisconnection
+7/28/2025 1:14:30 AM,LogStopMarkerSession
+7/28/2025 1:27:34 AM,LogPositionChange,Posture = [Supine]
+7/28/2025 1:28:14 AM,LogBLEConnection
+7/28/2025 1:28:19 AM,LogStartMarkerSession
+7/28/2025 1:59:40 AM,LogPositionChange,Posture = [Reclined]
+7/28/2025 2:05:36 AM,LogBLEDisconnection
+7/28/2025 2:05:37 AM,LogStopMarkerSession
+7/28/2025 2:09:12 AM,LogBLEConnection
+7/28/2025 2:09:17 AM,LogStartMarkerSession
+7/28/2025 2:12:57 AM,LogBLEDisconnection
+7/28/2025 2:12:57 AM,LogStopMarkerSession
+7/28/2025 2:18:20 AM,LogBLEConnection
+7/28/2025 2:18:24 AM,LogStartMarkerSession
+7/28/2025 2:27:55 AM,LogBLEDisconnection
+7/28/2025 2:27:56 AM,LogStopMarkerSession
+7/28/2025 2:31:18 AM,LogBLEConnection
+7/28/2025 2:31:25 AM,LogStartMarkerSession
+7/28/2025 3:12:58 AM,LogPositionChange,Posture = [Supine]
+7/28/2025 3:27:50 AM,LogPositionChange,Posture = [Reclined]
+7/28/2025 3:33:30 AM,LogPositionChange,Posture = [RightLateral]
+7/28/2025 3:59:15 AM,LogPositionChange,Posture = [Reclined]
+7/28/2025 4:29:50 AM,LogPositionChange,Posture = [RightLateral]
+7/28/2025 4:29:56 AM,LogPositionChange,Posture = [Reclined]
+7/28/2025 4:31:44 AM,LogPositionChange,Posture = [RightLateral]
+7/28/2025 4:37:36 AM,LogChangeAmplitudeByOrder,WasIncreased = [Yes] - OrderFromMobileApp = [No] - AmplitudeStep = [0.05 mA]
+7/28/2025 4:38:05 AM,LogPositionChange,Posture = [Reclined]
+7/28/2025 4:39:30 AM,LogPositionChange,Posture = [LeftLateral]
+7/28/2025 4:42:32 AM,LogPositionChange,Posture = [Supine]
+7/28/2025 4:43:38 AM,LogPositionChange,Posture = [LeftLateral]
+7/28/2025 4:43:38 AM,LogChangeAmplitudeByOrder,WasIncreased = [No] - OrderFromMobileApp = [No] - AmplitudeStep = [0.05 mA]
+7/28/2025 4:47:56 AM,LogPositionChange,Posture = [Supine]
+7/28/2025 4:48:34 AM,LogPositionChange,Posture = [Reclined]
+7/28/2025 4:49:10 AM,LogPositionChange,Posture = [Supine]
+7/28/2025 4:55:34 AM,LogProgramming,Device mode = [Ready] - Magnet mode = [Safety M.] - Balance mode = [Active] - TranstImpedPulseTerm = [IMP1-Case] - UprightPauseMode = [Disabled] - RollPauseMode = [Enabled] - GyroscopeMode = [Disabled] - PhasicTime = [1.5 sec] - TherapyRate = [18] bpm - RiseTime = [0.6] sec - FallTime = [0.2] sec - TonicAmplitude = [0.00 mA] - PhasicAmplitude = [0.70 mA] - OnsetRampTime = [0 min] - EndingRampTime = [0 min] - PulseWidth = [396.5 micro sec] - Frequency = [40 Hz] - InterphasePeriod = [30.5 micro sec] - BurstCycles = [2 cycles] - TherapyLength = [480] min - TherapyDelay = [0 min] - UprightPause = [8 min] - RollPause = [1 min] - MaxPhasicAmplitude = [1.40 mA] - MinPhasicAmplitude = [0.45 mA] - AmplitudeStep = [0.05 mA] - Terminal[0] = [+] - Terminal[1] = [-] - Terminal[2] = [+] - Terminal[3] = [Off] - Terminal[4] = [Off] - TranstImpedSamplingRate = [One stim. pulse] - StepUpVoltage = [Auto]
+7/28/2025 5:00:37 AM,LogPositionChange,Posture = [Active]
+7/28/2025 5:00:40 AM,LogPositionChange,Posture = [LeftLateral]
+7/28/2025 5:25:14 AM,LogPositionChange,Posture = [Supine]
+7/28/2025 5:53:13 AM,LogPositionChange,Posture = [Reclined]
+7/28/2025 5:56:04 AM,LogTherapyEnd,TherapyDuration = [20083 sec] - TherapyEndCause = [StopByOrder]
+7/28/2025 6:05:44 AM,LogPositionChange,Posture = [RightLateral]
+7/28/2025 6:05:47 AM,LogPositionChange,Posture = [Supine]
+7/28/2025 6:05:59 AM,LogPositionChange,Posture = [RightLateral]
+7/28/2025 6:06:35 AM,LogStopMarkerSession
+7/28/2025 6:06:47 AM,LogPositionChange,Posture = [Supine]
+7/28/2025 6:07:35 AM,LogPositionChange,Posture = [Reclined]
+7/28/2025 6:07:40 AM,LogPositionChange,Posture = [Standing]
+7/28/2025 6:09:43 AM,LogProgramming,Device mode = [Ready] - Magnet mode = [Safety M.] - Balance mode = [Active] - TranstImpedPulseTerm = [IMP1-Case] - UprightPauseMode = [Enabled] - RollPauseMode = [Enabled] - GyroscopeMode = [Disabled] - PhasicTime = [1.5 sec] - TherapyRate = [18] bpm - RiseTime = [0.6] sec - FallTime = [0.2] sec - TonicAmplitude = [0.00 mA] - PhasicAmplitude = [0.70 mA] - OnsetRampTime = [0 min] - EndingRampTime = [0 min] - PulseWidth = [396.5 micro sec] - Frequency = [40 Hz] - InterphasePeriod = [30.5 micro sec] - BurstCycles = [2 cycles] - TherapyLength = [480] min - TherapyDelay = [50 min] - UprightPause = [10 min] - RollPause = [1 min] - MaxPhasicAmplitude = [1.40 mA] - MinPhasicAmplitude = [0.55 mA] - AmplitudeStep = [0.05 mA] - Terminal[0] = [+] - Terminal[1] = [-] - Terminal[2] = [+] - Terminal[3] = [Off] - Terminal[4] = [Off] - TranstImpedSamplingRate = [One stim. pulse] - StepUpVoltage = [Auto]
+7/28/2025 6:13:07 AM,LogProgramming,Device mode = [Ready] - Magnet mode = [Safety M.] - Balance mode = [Active] - TranstImpedPulseTerm = [IMP1-Case] - UprightPauseMode = [Enabled] - RollPauseMode = [Enabled] - GyroscopeMode = [Disabled] - PhasicTime = [1.5 sec] - TherapyRate = [18] bpm - RiseTime = [0.6] sec - FallTime = [0.2] sec - TonicAmplitude = [0.00 mA] - PhasicAmplitude = [0.70 mA] - OnsetRampTime = [10 min] - EndingRampTime = [0 min] - PulseWidth = [396.5 micro sec] - Frequency = [40 Hz] - InterphasePeriod = [30.5 micro sec] - BurstCycles = [2 cycles] - TherapyLength = [480] min - TherapyDelay = [50 min] - UprightPause = [10 min] - RollPause = [1 min] - MaxPhasicAmplitude = [1.40 mA] - MinPhasicAmplitude = [0.55 mA] - AmplitudeStep = [0.05 mA] - Terminal[0] = [+] - Terminal[1] = [-] - Terminal[2] = [+] - Terminal[3] = [Off] - Terminal[4] = [Off] - TranstImpedSamplingRate = [One stim. pulse] - StepUpVoltage = [Auto]
+7/28/2025 6:13:36 AM,LogProgramming,Device mode = [Ready] - Magnet mode = [Safety M.] - Balance mode = [Active] - TranstImpedPulseTerm = [IMP1-Case] - UprightPauseMode = [Enabled] - RollPauseMode = [Enabled] - GyroscopeMode = [Disabled] - PhasicTime = [1.5 sec] - TherapyRate = [18] bpm - RiseTime = [0.6] sec - FallTime = [0.2] sec - TonicAmplitude = [0.00 mA] - PhasicAmplitude = [0.70 mA] - OnsetRampTime = [10 min] - EndingRampTime = [0 min] - PulseWidth = [396.5 micro sec] - Frequency = [40 Hz] - InterphasePeriod = [30.5 micro sec] - BurstCycles = [2 cycles] - TherapyLength = [480] min - TherapyDelay = [50 min] - UprightPause = [10 min] - RollPause = [2 min] - MaxPhasicAmplitude = [1.40 mA] - MinPhasicAmplitude = [0.55 mA] - AmplitudeStep = [0.05 mA] - Terminal[0] = [+] - Terminal[1] = [-] - Terminal[2] = [+] - Terminal[3] = [Off] - Terminal[4] = [Off] - TranstImpedSamplingRate = [One stim. pulse] - StepUpVoltage = [Auto]
+7/28/2025 6:18:50 AM,LogBLEDisconnection
+7/28/2025 6:53:34 AM,LogBLEConnection
+7/28/2025 6:55:32 AM,LogBLEDisconnection
+7/28/2025 8:00:00 AM,LogDailyImpedanceMeas,LeadImpedance = [1840 Ohms] - Terminal[0] = [+] - Terminal[1] = [-] - Terminal[2] = [+] - Terminal[3] = [Off] - Terminal[4] = [Off]
+7/29/2025 12:00:00 AM,LogDailyBattMeas,2.90 V
+7/29/2025 12:00:00 AM,LogDailyTherapyTime,20083 sec
+7/29/2025 12:00:00 AM,LogTotalIpgTherapyTime,361342 sec
+7/29/2025 12:00:00 AM,LogDailyTimeInEachPosition,Active = [4718 sec] - Standing = [51231 sec] - Reclined = [16554 sec] - Lying = [0 sec] - Supine = [8277 sec] - Prone = [247 sec] - RightLateral = [2514 sec] - LeftLateral = [2859 sec]
+7/29/2025 12:08:40 AM,LogBLEConnection
+,LogNoEvent,LogNoEvent
