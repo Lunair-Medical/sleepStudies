@@ -1,11 +1,13 @@
 #this script will check for 3% desats, check for overlapping events, and remove events that are associated with either of those mistakes
 #originally created by Grace Burkholder on 18 July 2025
 
+rm(list=ls())
 library(janitor)
 library(tidyverse)
 library(dplyr)
 library(readr)
 library(readxl)
+library(lubridate)
 
 # read in the csv desat event grid
 rawdata<-read.csv("data/EventGrids/201-018_EventGrid_60D_07292025.csv")
@@ -48,6 +50,11 @@ for (i in 1:length(allevents)) {
 respevents <- rawdata %>%
   filter(event %in% (c("A. Mixed", "A. Obstructive", "A. Central", "Hypopnea","Apnea",
                        "H. Obstructive", "H. Mixed")))
+
+#convert to times 
+respevents %>%
+  mutate(start_time=mdy_hms(start_time))%>%
+  mutate(end_time=mdy_hms(end_time))->respevents
 
 ##check that the apneas/hypopneas don't have any overlaps
 overlaps <- expand.grid(row_id1 = respevents$row_id, row_id2 = respevents$row_id) %>%
