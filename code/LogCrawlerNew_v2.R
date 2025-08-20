@@ -29,6 +29,7 @@ stopifnot(nzchar(csv_path))
 
 # Tracking sheet with milestone dates as a tibble
 tracking_path <- "C:/Users/MegMcEachram/Lunair Medical/R&D - Documents/FiH Data/ECLIPSE 1 - Paraguay/Analysis/px_tracking_sheet.xlsx"
+#tracking_path <- "C:/Users/GraceBurkholder/Lunair Medical/R&D - Documents/FiH Data/ECLIPSE 1 - Paraguay/Analysis/px_tracking_sheet.xlsx"
 track <- readxl::read_xlsx(tracking_path) %>%
   as_tibble() %>%      # ← ensure it’s a tbl_df/data.frame
   clean_names()
