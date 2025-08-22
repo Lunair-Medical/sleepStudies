@@ -217,7 +217,7 @@ for(i in 1:nrow(new_df)) {
     current_amp <- new_df$phasic_amplitude[i]
   } else if(new_df$event[i] == "LogChangeAmpByOrder") {
     # Increment or decrement by step size * direction
-    current_amp <- current_amp + new_df$amp_delta
+    current_amp <- current_amp + new_df$amp_delta[i]
   }
   
   running_amp[i] <- current_amp
