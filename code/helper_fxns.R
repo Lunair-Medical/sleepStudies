@@ -118,3 +118,54 @@ ssm_to_time<-function(x){
 return(as.ITime(h))
 }
 ssm_to_time(77982)
+
+#---------------date/time parsing-----------------------------------
+
+#flexibly accommodates different types of event grid timestamps
+fix_eg_times <- function(df) {
+  # Coerce to character first
+  st_char <- as.character(df$start_time)
+  end_char<- as.character(df$end_time)
+  
+  # Parse and see if you're successful
+  start_datetime <- suppressWarnings(mdy_hms(st_char))
+  
+  #if none parsed, assume you're missing a date and prompt for it: 
+  if(all(is.na(start_datetime))){ 
+    
+    #prompt for date
+    st_dt <- dlg_input(message="Please provide a start date (YYYY-MM-DD):")$res
+    analysis_start_date<-as.Date(st_dt) #convert to Date
+    analysis_end_date<-analysis_start_date + days(1) #assume the same date for now
+    
+    #parse just the time portion and store in the df:
+    df$just_start_time<-lubridate::hms(st_char)
+    df$just_end_time<-lubridate::hms(end_char)
+    
+    
+    #add the dates to get start and end datetimes
+    df<- df %>%
+      mutate(event_start_date=if_else(as.numeric(just_start_time) < 12*60*60, analysis_end_date, analysis_start_date),
+             event_end_date = if_else(as.numeric(just_end_time) < 12*60*60, analysis_end_date, analysis_start_date)) 
+    
+    
+    #paste together the times and dates to get datetimes 
+    df %>% 
+      mutate(event_start_datetime=as.POSIXct(event_start_date + just_start_time),
+             event_end_datetime=as.POSIXct(event_end_date + just_end_time))->df
+    
+    df$start_time<-as_hms(df$event_start_datetime)
+    df$end_time<-as_hms(df$event_end_datetime)
+    
+    df<-df[,-which( grepl("just",colnames(df)))]
+    
+  } else {
+    df %>% 
+      mutate(event_start_datetime=as.POSIXct(start_time,format= "%m/%d/%Y %I:%M:%S %p"),
+             event_end_datetime=as.POSIXct(end_time,format= "%m/%d/%Y %I:%M:%S %p"),
+             start_time=as_hms(event_start_datetime),
+             end_time=as_hms(event_end_datetime))->df
+  }
+  return(df)
+}
+

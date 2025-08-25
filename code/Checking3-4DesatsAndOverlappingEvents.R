@@ -9,15 +9,21 @@ library(readr)
 library(readxl)
 library(lubridate)
 
+source("Code/helper_fxns.R")
+
 # read in the csv desat event grid
 rawdata<-read.csv("data/EventGrids/201-018_EventGrid_60D_07292025.csv")
 #rawdata<-read_xls("data/EventGrids/201-018_EventGrid_60D_07292025.xls")
+
 
 # clean the column names
 clean_names(rawdata)->rawdata
 
 rawdata<-rawdata[-1,]
 rawdata <- rawdata[, !(names(rawdata) %in% "x")]
+
+#convert the times 
+rawdata<-fix_eg_times(rawdata)
 
 # Add a row number for unique identification and add a diff SpO2 column
 rawdata <- rawdata %>% mutate(row_id = row_number())
